@@ -1,4 +1,5 @@
 from portal.oracle_schema import EXPECTED_TABLES, load_schema_objects
+from portal.management.commands.reparar_fechas_gc import existing_column_definition
 
 
 def test_all_new_tables_follow_required_naming():
@@ -28,3 +29,10 @@ def test_schema_timestamps_are_compatible_with_oracle_thin():
     assert "TIMESTAMP(6) WITH TIME ZONE" not in table_ddl
     assert "DEFAULT SYSTIMESTAMP" not in table_ddl
     assert "TIMESTAMP(6) DEFAULT LOCALTIMESTAMP" in table_ddl
+
+
+def test_existing_timestamp_repair_does_not_repeat_not_null():
+    definition = existing_column_definition("FECHA_CREACION", has_default=True)
+
+    assert definition == "FECHA_CREACION TIMESTAMP(6) DEFAULT LOCALTIMESTAMP"
+    assert "NOT NULL" not in definition

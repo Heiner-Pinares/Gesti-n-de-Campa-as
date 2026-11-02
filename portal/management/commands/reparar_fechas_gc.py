@@ -45,6 +45,14 @@ def column_definition(column, nullable, has_default):
     return definition
 
 
+def existing_column_definition(column, has_default):
+    """Cambia el tipo conservando la nulabilidad que Oracle ya tiene."""
+    definition = f"{column} TIMESTAMP(6)"
+    if has_default:
+        definition += " DEFAULT LOCALTIMESTAMP"
+    return definition
+
+
 def column_type(cursor, table, column):
     cursor.execute(
         """
@@ -123,7 +131,7 @@ class Command(BaseCommand):
                         if table_rows == 0 and data_type:
                             cursor.execute(
                                 f"ALTER TABLE {table} MODIFY "
-                                f"({column_definition(column, nullable, has_default)})"
+                                f"({existing_column_definition(column, has_default)})"
                             )
                             changed.append(f"{table}.{column}")
                             continue
