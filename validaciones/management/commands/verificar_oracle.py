@@ -20,7 +20,8 @@ FROM DUAL
 
 
 def friendly_oracle_error(error):
-    code = getattr(getattr(error, "args", [None])[0], "code", None)
+    detail = getattr(error, "args", [None])[0]
+    code = getattr(detail, "code", None)
     messages = {
         1017: "Credenciales Oracle rechazadas.",
         12154: "No se pudo resolver el descriptor Oracle.",
@@ -32,6 +33,12 @@ def friendly_oracle_error(error):
         return messages[code]
     if code == 20001:
         return "Oracle rechazó la sesión mediante un control de acceso. Revise el mensaje con el DBA."
+    message = str(getattr(detail, "message", "") or "").strip().splitlines()[0]
+    if code and message:
+        prefix = f"ORA-{code:05d}: "
+        if message.startswith(prefix):
+            message = message[len(prefix):]
+        return f"Oracle devolvió ORA-{code:05d}: {message}"
     return "No se pudo completar el diagnóstico Oracle. Revise red, servicio, permisos y configuración."
 
 

@@ -1,5 +1,8 @@
 from portal.oracle_schema import EXPECTED_TABLES, load_schema_objects
-from portal.management.commands.reparar_fechas_gc import existing_column_definition
+from portal.management.commands.reparar_fechas_gc import (
+    INDEXES_BY_COLUMN,
+    existing_column_definition,
+)
 
 
 def test_all_new_tables_follow_required_naming():
@@ -36,3 +39,14 @@ def test_existing_timestamp_repair_does_not_repeat_not_null():
 
     assert definition == "FECHA_CREACION TIMESTAMP(6) DEFAULT LOCALTIMESTAMP"
     assert "NOT NULL" not in definition
+
+
+def test_timestamp_repair_rebuilds_every_affected_index():
+    execution_indexes = INDEXES_BY_COLUMN[
+        ("TBL_VALIDACION_EJECUCION_GC", "FECHA_SOLICITUD")
+    ]
+    audit_indexes = INDEXES_BY_COLUMN[("TBL_AUDITORIA_CAMBIO_GC", "FECHA_EVENTO")]
+
+    assert [name for name, _ in execution_indexes] == ["IDX_EJEC_EST_GC"]
+    assert {name for name, _ in audit_indexes} == {"IDX_AUD_ENT_GC", "IDX_AUD_FEC_GC"}
+    assert all(sql.startswith("CREATE INDEX ") for _, sql in execution_indexes + audit_indexes)

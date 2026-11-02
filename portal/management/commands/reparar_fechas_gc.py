@@ -34,6 +34,27 @@ TIMESTAMP_COLUMNS = {
     },
 }
 BUSINESS_TABLES = set(TIMESTAMP_COLUMNS) - {"TBL_USUARIO_GC"}
+INDEXES_BY_COLUMN = {
+    ("TBL_VALIDACION_EJECUCION_GC", "FECHA_SOLICITUD"): (
+        (
+            "IDX_EJEC_EST_GC",
+            "CREATE INDEX IDX_EJEC_EST_GC "
+            "ON TBL_VALIDACION_EJECUCION_GC (ESTADO, FECHA_SOLICITUD)",
+        ),
+    ),
+    ("TBL_AUDITORIA_CAMBIO_GC", "FECHA_EVENTO"): (
+        (
+            "IDX_AUD_ENT_GC",
+            "CREATE INDEX IDX_AUD_ENT_GC "
+            "ON TBL_AUDITORIA_CAMBIO_GC (ENTIDAD, ID_ENTIDAD, FECHA_EVENTO)",
+        ),
+        (
+            "IDX_AUD_FEC_GC",
+            "CREATE INDEX IDX_AUD_FEC_GC "
+            "ON TBL_AUDITORIA_CAMBIO_GC (FECHA_EVENTO)",
+        ),
+    ),
+}
 
 
 def column_definition(column, nullable, has_default):
@@ -69,6 +90,34 @@ def column_type(cursor, table, column):
 def row_count(cursor, table):
     cursor.execute(f"SELECT COUNT(*) FROM {table}")
     return cursor.fetchone()[0]
+
+
+def index_exists(cursor, index_name):
+    cursor.execute(
+        "SELECT COUNT(*) FROM USER_INDEXES WHERE INDEX_NAME = :index_name",
+        {"index_name": index_name},
+    )
+    return cursor.fetchone()[0] == 1
+
+
+def modify_empty_column(cursor, table, column, has_default):
+    """Modifica una columna vacía retirando solo los índices que la bloquean."""
+    affected_indexes = INDEXES_BY_COLUMN.get((table, column), ())
+    for index_name, _ in affected_indexes:
+        if index_exists(cursor, index_name):
+            cursor.execute(f"DROP INDEX {index_name}")
+
+    try:
+        cursor.execute(
+            f"ALTER TABLE {table} MODIFY "
+            f"({existing_column_definition(column, has_default)})"
+        )
+    finally:
+        # Oracle confirma DDL automáticamente. Restaurar los índices también si
+        # el ALTER falla permite volver a ejecutar el comando sin dejar huecos.
+        for index_name, create_sql in affected_indexes:
+            if not index_exists(cursor, index_name):
+                cursor.execute(create_sql)
 
 
 class Command(BaseCommand):
@@ -129,10 +178,7 @@ class Command(BaseCommand):
                         if data_type and "WITH TIME ZONE" not in data_type:
                             continue
                         if table_rows == 0 and data_type:
-                            cursor.execute(
-                                f"ALTER TABLE {table} MODIFY "
-                                f"({existing_column_definition(column, has_default)})"
-                            )
+                            modify_empty_column(cursor, table, column, has_default)
                             changed.append(f"{table}.{column}")
                             continue
 
