@@ -75,6 +75,16 @@ Después cree el primer administrador. La contraseña se solicita de forma ocult
 
 No ejecute `manage.py migrate`: el portal no utiliza tablas `AUTH_*`, `DJANGO_SESSION` ni migraciones automáticas.
 
+### Compatibilidad de fechas con Oracle Thin
+
+Si el esquema se creó con una versión inicial que usaba `TIMESTAMP WITH TIME ZONE` y aparece `DPY-3022`, actualice el código y ejecute una sola vez:
+
+```powershell
+.\scripts\repair_oracle_timestamps.ps1
+```
+
+La reparación solo afecta las columnas técnicas de fecha de `TBL_*_GC`. Preserva los usuarios existentes y se detiene si detecta datos funcionales que requieran una revisión manual.
+
 ## Arranque de verificación
 
 ```powershell

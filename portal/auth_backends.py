@@ -6,12 +6,24 @@ from django.contrib.auth.hashers import make_password
 
 
 class PortalBackend(BaseBackend):
+    user_fields = (
+        "id_usuario",
+        "username",
+        "nombre_completo",
+        "email",
+        "password",
+        "rol",
+        "is_active",
+    )
+
     def authenticate(self, request, username=None, password=None, **kwargs):
         if not username or password is None:
             return None
         user_model = get_user_model()
         try:
-            user = user_model.objects.get(username__iexact=username.strip())
+            user = user_model.objects.only(*self.user_fields).get(
+                username__iexact=username.strip()
+            )
         except user_model.DoesNotExist:
             make_password(password)
             return None
@@ -22,7 +34,7 @@ class PortalBackend(BaseBackend):
     def get_user(self, user_id):
         user_model = get_user_model()
         try:
-            user = user_model.objects.get(pk=user_id)
+            user = user_model.objects.only(*self.user_fields).get(pk=user_id)
         except user_model.DoesNotExist:
             return None
         return user if user.is_active else None

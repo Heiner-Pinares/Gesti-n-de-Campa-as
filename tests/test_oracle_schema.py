@@ -19,3 +19,12 @@ def test_schema_contains_only_create_table_and_index():
         normalized = " ".join(item.ddl.upper().split())
         assert normalized.startswith(("CREATE TABLE ", "CREATE INDEX ", "CREATE UNIQUE INDEX "))
         assert not any(keyword in normalized for keyword in (" DROP ", " TRUNCATE ", " DELETE ", " UPDATE ", " INSERT ", " MERGE "))
+
+
+def test_schema_timestamps_are_compatible_with_oracle_thin():
+    objects = load_schema_objects()
+    table_ddl = "\n".join(item.ddl.upper() for item in objects if item.object_type == "TABLE")
+
+    assert "TIMESTAMP(6) WITH TIME ZONE" not in table_ddl
+    assert "DEFAULT SYSTIMESTAMP" not in table_ddl
+    assert "TIMESTAMP(6) DEFAULT LOCALTIMESTAMP" in table_ddl
