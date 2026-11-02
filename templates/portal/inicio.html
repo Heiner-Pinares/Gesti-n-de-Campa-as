@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="metrics">
+  <article><span>Campañas activas</span><strong>{% if active_count is None %}—{% else %}{{ active_count }}{% endif %}</strong><small>Fuente: {{ source_state }}</small></article>
+  <article><span>Última ejecución</span><strong>—</strong><small>Nunca ejecutado</small></article>
+  <article><span>Registros procesados</span><strong>—</strong><small>Sin ejecución disponible</small></article>
+  <article><span>Por revisar</span><strong>—</strong><small>Sin ejecución disponible</small></article>
+</section>
+<section class="panel empty-state">
+  <div class="status-dot"></div>
+  <h2>El motor aún no se ha ejecutado</h2>
+  <p>La conexión Oracle y el almacenamiento de resultados se habilitarán después de validar permisos y aprobar el modelo de datos.</p>
+  <div class="actions"><a class="button primary" href="{% url 'campanas' %}">Administrar campañas</a><a class="button secondary" href="{% url 'validaciones' %}">Revisar validaciones</a></div>
+</section>
+{% endblock %}

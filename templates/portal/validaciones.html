@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block actions %}<button class="button primary" disabled title="Requiere conexión Oracle autorizada">Ejecutar validación</button>{% endblock %}
+{% block content %}
+<section class="panel empty-state"><div class="status-dot"></div><h2>Nunca ejecutado</h2><p>El botón permanecerá deshabilitado hasta comprobar la conexión Oracle, la fuente de fecha de elegibilidad y la persistencia aprobada.</p></section>
+{% endblock %}

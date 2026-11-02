@@ -1,0 +1,30 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · Control de Campañas</title>
+  <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="{% url 'inicio' %}">Claro<span>CONTROL DE CAMPAÑAS</span></a>
+    <nav aria-label="Navegación principal">
+      <a href="{% url 'inicio' %}" {% if request.path == '/' %}class="active"{% endif %}>Inicio</a>
+      <a href="{% url 'campanas' %}" {% if '/campanas/' in request.path %}class="active"{% endif %}>Campañas</a>
+      <a href="{% url 'validaciones' %}" {% if '/validaciones/' in request.path %}class="active"{% endif %}>Validaciones</a>
+    </nav>
+    <div class="sidebar-note">Móvil Masivo<br>Facturación al Cliente</div>
+  </aside>
+  <div class="shell">
+    <header class="topbar">
+      <div><small>PORTAL DE CONTROL AUTOMÁTICO</small><strong>Campañas y descuentos</strong></div>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">Cerrar sesión</button></form>
+    </header>
+    <main>
+      <div class="heading"><div><span>CONTROL Y MEJORAS</span><h1>{{ title }}</h1></div>{% block actions %}{% endblock %}</div>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

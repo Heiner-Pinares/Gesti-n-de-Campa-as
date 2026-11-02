@@ -1,0 +1,8 @@
+Coloque aquí, solo en el servidor autorizado, los archivos de entrada:
+
+- CFG_CAMPANAS_PORTABILIDAD.csv
+- BASE_CF_BASICO.csv
+- Consolidado de Movil Masivo_Negocios.xlsx
+
+Esta carpeta está excluida de Git porque puede contener información comercial y datos de clientes.
+Las rutas también pueden configurarse con variables de entorno.

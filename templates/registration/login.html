@@ -1,0 +1,18 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acceso · Control de Campañas</title><link rel="stylesheet" href="{% static 'css/portal.css' %}"></head>
+<body class="login-page">
+  <main class="login-card">
+    <div class="login-brand">Claro</div>
+    <p class="eyebrow">CONTROL AUTOMÁTICO</p>
+    <h1>Campañas y descuentos</h1>
+    <p>Ingresa con tu cuenta autorizada.</p>
+    {% if form.errors %}<div class="alert error">Usuario o contraseña incorrectos.</div>{% endif %}
+    <form method="post">{% csrf_token %}
+      <label for="id_username">Usuario</label>{{ form.username }}
+      <label for="id_password">Contraseña</label>{{ form.password }}
+      <button class="button primary" type="submit">Ingresar</button>
+    </form>
+  </main>
+</body>
+</html>
