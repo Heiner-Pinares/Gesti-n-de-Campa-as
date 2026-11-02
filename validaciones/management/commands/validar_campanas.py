@@ -3,7 +3,12 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
-from validaciones.service import DuplicateExecution, create_execution, execute_validation
+from validaciones.service import (
+    DuplicateExecution,
+    InvalidExecutionPeriod,
+    create_execution,
+    execute_validation,
+)
 
 
 def parse_date(value):
@@ -40,7 +45,7 @@ class Command(BaseCommand):
                 raise CommandError("El usuario indicado no existe.") from error
         try:
             execution = create_execution(start, end, options["tipo"], user=user)
-        except DuplicateExecution as error:
+        except (DuplicateExecution, InvalidExecutionPeriod) as error:
             raise CommandError(str(error)) from error
         self.stdout.write(f"Ejecución #{execution.pk} registrada.")
         execute_validation(execution.pk)

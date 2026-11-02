@@ -29,6 +29,10 @@ class DuplicateExecution(RuntimeError):
     pass
 
 
+class InvalidExecutionPeriod(ValueError):
+    pass
+
+
 def _as_date(value):
     if isinstance(value, datetime):
         return value.date()
@@ -103,11 +107,22 @@ def _precondition_result(source):
             code="CAMPANAS_AMBIGUAS",
         )
     if int(source.get("cantidad_descuentos") or 0) > 1:
+        raw_applied = _decimal(source.get("descuento_aplicado"))
         return ValidationResult(
             ValidationStatus.REVIEW,
             "Se encontraron varios descuentos y no existe una regla de acumulación aprobada.",
-            applied_discount=abs(_decimal(source.get("descuento_aplicado")) or Decimal("0")),
+            applied_discount=abs(raw_applied) if raw_applied is not None else None,
             code="DESCUENTOS_MULTIPLES",
+        )
+    prorated = _decimal(source.get("plan_prorrateo")) or Decimal("0")
+    returned = _decimal(source.get("plan_devolucion")) or Decimal("0")
+    if prorated != 0 or returned != 0:
+        raw_applied = _decimal(source.get("descuento_aplicado"))
+        return ValidationResult(
+            ValidationStatus.REVIEW,
+            "El registro contiene prorrateo o devolución y requiere una regla de cálculo confirmada.",
+            applied_discount=abs(raw_applied) if raw_applied is not None else None,
+            code="PRORRATEO_O_DEVOLUCION",
         )
     return None
 
@@ -154,6 +169,10 @@ def _result_model(execution, source, result, version_by_rule, reason_map):
         "monto_con_igv": source.get("monto_con_igv"),
         "codigo_resultado": result.code,
     }
+    applied = result.applied_discount
+    if applied is None and source.get("descuento_aplicado") is not None:
+        raw_applied = _decimal(source.get("descuento_aplicado"))
+        applied = abs(raw_applied) if raw_applied is not None else None
     return ValidationStoredResult(
         ejecucion=execution,
         version_id=version_by_rule.get(result.rule_id),
@@ -164,7 +183,7 @@ def _result_model(execution, source, result, version_by_rule, reason_map):
         ch_reason=source.get("ch_reason"),
         plan_monto=_decimal(source.get("plan_monto")),
         descuento_esperado=result.expected_discount,
-        descuento_aplicado=result.applied_discount,
+        descuento_aplicado=applied,
         diferencia=result.difference,
         clasificacion=result.status.value,
         codigo_motivo=result.code[:50],
@@ -174,6 +193,12 @@ def _result_model(execution, source, result, version_by_rule, reason_map):
 
 
 def create_execution(start, end, execution_type, user=None, ip_address=None):
+    if start > end:
+        raise InvalidExecutionPeriod("La fecha desde no puede ser posterior a la fecha hasta.")
+    if (end - start).days + 1 > settings.VALIDATION_MAX_DAYS:
+        raise InvalidExecutionPeriod(
+            f"El periodo máximo es de {settings.VALIDATION_MAX_DAYS} días."
+        )
     with transaction.atomic():
         if connection.vendor == "oracle":
             with connection.cursor() as cursor:
@@ -287,7 +312,11 @@ def _safe_error_message(error):
 def _background_target(execution_id):
     close_old_connections()
     try:
-        execute_validation(execution_id)
+        try:
+            execute_validation(execution_id)
+        except Exception:
+            # execute_validation ya conserva un estado ERROR y un mensaje seguro.
+            pass
     finally:
         close_old_connections()
 

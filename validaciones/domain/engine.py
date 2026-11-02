@@ -45,8 +45,10 @@ class CampaignRule:
             and self.valid_from <= case.eligibility_date <= self.valid_to
             and (
                 not self.plan_code
-                or not case.plan_code
-                or _normalized_text(self.plan_code) == _normalized_text(case.plan_code)
+                or (
+                    bool(case.plan_code)
+                    and _normalized_text(self.plan_code) == _normalized_text(case.plan_code)
+                )
             )
         )
 

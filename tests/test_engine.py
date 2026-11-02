@@ -117,3 +117,53 @@ def test_rounding_uses_decimal_half_up():
         [rule(plan_min=Decimal("60.90"))],
     )
     assert result.expected_discount == Decimal("30.45")
+
+
+def test_fixed_discount_incorrect():
+    fixed = rule(
+        benefit_type=BenefitType.FIXED_AMOUNT,
+        benefit_value=Decimal("10.00"),
+    )
+    result = validate_case(case(applied_discount=Decimal("-8.00")), [fixed])
+
+    assert result.status == ValidationStatus.ERROR
+    assert result.code == "DESCUENTO_INFERIOR"
+
+
+def test_inactive_campaign_is_not_approved():
+    result = validate_case(case(), [rule(active=False)])
+
+    assert result.status == ValidationStatus.REVIEW
+    assert result.code == "REGLA_NO_ENCONTRADA"
+
+
+def test_campaign_outside_eligibility_date_is_not_approved():
+    result = validate_case(case(eligibility_date=date(2026, 11, 1)), [rule()])
+
+    assert result.status == ValidationStatus.REVIEW
+
+
+def test_negative_reference_charge_requires_review():
+    result = validate_case(case(plan_amount=Decimal("-1")), [rule()])
+
+    assert result.status == ValidationStatus.REVIEW
+    assert result.code == "CARGO_INVALIDO"
+
+
+def test_specific_plan_code_requires_the_code_in_the_source():
+    result = validate_case(
+        case(plan_code=None),
+        [rule(plan_code="P-50")],
+    )
+
+    assert result.status == ValidationStatus.REVIEW
+    assert result.code == "REGLA_NO_ENCONTRADA"
+
+
+def test_specific_plan_code_matches_when_equal():
+    result = validate_case(
+        case(plan_code="P-50"),
+        [rule(plan_code="p-50")],
+    )
+
+    assert result.status == ValidationStatus.CORRECT

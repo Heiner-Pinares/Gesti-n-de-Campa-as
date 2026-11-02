@@ -97,7 +97,23 @@ No se debe exponer directamente el puerto a Internet. La publicación final debe
 
 ## Persistencia y autenticación
 
-El código incluye autenticación Django, pero sus tablas todavía no se han creado porque cualquier DDL requiere aprobación. Hasta aprobar el modelo y las migraciones, el arranque productivo no está habilitado como entrega final.
+La autenticación, las campañas versionadas, las ejecuciones, los resultados y la auditoría utilizan las cinco tablas propias `TBL_*_GC`. El portal no requiere tablas estándar de Django ni ejecuta migraciones.
+
+Después de actualizar el código en un servidor ya instalado, vuelva a recopilar los archivos estáticos antes de reiniciar:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py collectstatic --noinput
+```
+
+## Motor de validación
+
+La ejecución manual se inicia desde la sección **Validaciones**. También se puede invocar el mismo motor por PowerShell:
+
+```powershell
+.\scripts\run_campaign_validation.ps1 -Desde 2026-10-24 -Hasta 2026-10-27 -Tipo PROGRAMADA
+```
+
+El proceso solo consulta las tablas fuente y escribe en `TBL_VALIDACION_EJECUCION_GC`, `TBL_VALIDACION_RESULTADO_GC` y `TBL_AUDITORIA_CAMBIO_GC`.
 
 ## Servicio de Windows y automatización
 

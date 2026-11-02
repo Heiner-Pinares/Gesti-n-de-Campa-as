@@ -139,6 +139,55 @@ def campaign_history(origin_id):
     )
 
 
+def campaign_history_details(origin_id):
+    versions = campaign_history(origin_id)
+    version_ids = [item.pk for item in versions]
+    audits = {
+        int(item.id_entidad): item
+        for item in ChangeAudit.objects.filter(
+            entidad="CAMPANA", id_entidad__in=version_ids
+        ).order_by("-fecha_evento")
+    }
+    labels = {
+        "cod_plan": "identificador comercial",
+        "name": "nombre",
+        "operation": "operación",
+        "plan_min": "plan mínimo",
+        "plan_max": "plan máximo",
+        "benefit_type": "tipo de beneficio",
+        "benefit_value": "valor del beneficio",
+        "duration": "duración",
+        "valid_from": "vigencia inicial",
+        "valid_to": "vigencia final",
+        "active": "estado",
+        "description": "descripción",
+    }
+    details = []
+    for version in versions:
+        audit = audits.get(version.pk)
+        before = {}
+        after = {}
+        if audit:
+            try:
+                before = json.loads(audit.valor_anterior_json or "{}")
+                after = json.loads(audit.valor_nuevo_json or "{}")
+            except (TypeError, ValueError):
+                pass
+        changed = [
+            label
+            for key, label in labels.items()
+            if before.get(key) != after.get(key)
+        ]
+        details.append(
+            {
+                "version": version,
+                "reason": _conditions(version).get("motivo_modificacion", ""),
+                "changed_fields": ", ".join(changed) or "Creación inicial",
+            }
+        )
+    return details
+
+
 def get_campaign(settings, record_key):
     try:
         kind, raw_id = record_key.split("-", 1)
@@ -206,6 +255,8 @@ def validate_no_ambiguous_overlap(settings, cleaned, excluded_origin=None):
             continue
         if not current["valid_from"] or not current["valid_to"]:
             continue
+        if current["plan_min"] is None or current["plan_max"] is None:
+            continue
         if not _ranges_overlap(
             cleaned["vigencia_ini"], cleaned["vigencia_fin"],
             current["valid_from"], current["valid_to"],
@@ -231,13 +282,13 @@ def _serializable(record):
 
 def save_campaign(settings, cleaned, user, previous=None, ip_address=None):
     excluded_origin = previous["origin_id"] if previous else None
-    validate_no_ambiguous_overlap(settings, cleaned, excluded_origin)
     with transaction.atomic():
         if connection.vendor == "oracle":
             with connection.cursor() as cursor:
                 cursor.execute(
                     "LOCK TABLE TBL_CAMPANA_VERSION_GC IN SHARE ROW EXCLUSIVE MODE"
                 )
+        validate_no_ambiguous_overlap(settings, cleaned, excluded_origin)
 
         if previous:
             origin = previous["origin_id"]
@@ -252,6 +303,16 @@ def save_campaign(settings, cleaned, user, previous=None, ip_address=None):
             .order_by("-version", "-id_version")
             .first()
         )
+        if (
+            previous
+            and previous.get("version_id")
+            and current
+            and current.pk != previous["version_id"]
+        ):
+            raise CampaignConflict(
+                "La campaña fue modificada por otro usuario. Recargue la página "
+                "antes de guardar una nueva versión."
+            )
         next_version = current.version + 1 if current else 1
         if current and current.estado == "A":
             current.estado = "I"

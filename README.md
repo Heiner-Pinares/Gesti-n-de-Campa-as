@@ -8,6 +8,8 @@ Proyecto independiente para administrar campañas comerciales y validar descuent
 - Fase 1: conexión y metadatos Oracle comprobados en el servidor Windows.
 - Fase 2: análisis local de CSV, XLSX y SQL legacy completado.
 - Fase 3: modelo persistente Oracle aprobado e implementado con nomenclatura `TBL_*_GC`.
+- Fases 4 y 5: motor parametrizable, ejecución manual, historial, resultados y exportación implementados.
+- Fase 6: comando apto para un programador externo implementado; no existe una programación activa.
 
 El portal no ejecuta migraciones ni DDL al iniciar. La creación del esquema se realiza solamente mediante el comando explícito documentado para Windows.
 
@@ -17,6 +19,8 @@ Documentación principal:
 - `docs/FASE_1_IMPLEMENTACION_SEGURA.md`
 - `docs/FASE_2_ANALISIS_FUENTES_Y_SQL.md`
 - `docs/SERVIDOR_WINDOWS.md`
+- `docs/MOTOR_VALIDACION.md`
+- `docs/MANUAL_USUARIO.md`
 
 ## Arquitectura propuesta
 
@@ -37,5 +41,11 @@ Documentación principal:
 5. Cree los objetos autorizados con `scripts\apply_oracle_schema.ps1`.
 6. Cree el administrador con `scripts\create_portal_admin.ps1`.
 7. Inicie el portal mediante `scripts\run_windows.ps1`.
+
+Una validación también puede ejecutarse sin abrir el portal:
+
+```powershell
+.\scripts\run_campaign_validation.ps1 -Desde 2026-10-24 -Hasta 2026-10-27
+```
 
 No se debe copiar el secreto de 4DX ni ejecutar `manage.py migrate`.

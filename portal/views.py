@@ -10,9 +10,11 @@ from django.db import DatabaseError
 from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from validaciones.service import (
     DuplicateExecution,
+    InvalidExecutionPeriod,
     create_execution,
     parse_evidence,
     start_background_execution,
@@ -22,7 +24,7 @@ from .campaign_service import (
     CampaignConflict,
     CampaignNotFound,
     campaign_form_initial,
-    campaign_history,
+    campaign_history_details,
     get_campaign,
     list_effective_campaigns,
     save_campaign,
@@ -43,13 +45,36 @@ STATUS_LABELS = {
 
 def _client_ip(request):
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    return (forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR")) or None
+    trust_proxy = bool(getattr(settings, "SECURE_PROXY_SSL_HEADER", None))
+    return (
+        forwarded.split(",")[0].strip()
+        if forwarded and trust_proxy
+        else request.META.get("REMOTE_ADDR")
+    ) or None
 
 
 def _decimal_text(value):
     if value is None:
         return "—"
     return f"{Decimal(value):,.2f}"
+
+
+def campaign_display(row):
+    """Compatibilidad para filas crudas de CFG usadas por importación y pruebas."""
+    displayed = dict(row)
+    raw_percentage = str(displayed.get("PORCENTAJE") or "").strip()
+    if raw_percentage:
+        try:
+            percentage = Decimal(raw_percentage.replace(",", ".")) * 100
+            text = format(percentage, "f")
+            if "." in text:
+                text = text.rstrip("0").rstrip(".")
+            displayed["BENEFICIO_DISPLAY"] = text + "%"
+        except Exception:
+            displayed["BENEFICIO_DISPLAY"] = "Valor porcentual inválido"
+    else:
+        displayed["BENEFICIO_DISPLAY"] = displayed.get("DESCRIPCION") or "Pendiente de parametrizar"
+    return displayed
 
 
 def _campaign_display(record):
@@ -201,7 +226,7 @@ def campaign_edit(request, record_key):
             "title": "Ver / editar campaña",
             "form": form,
             "record": _campaign_display(record),
-            "history": campaign_history(record["origin_id"]),
+            "history": campaign_history_details(record["origin_id"]),
         },
     )
 
@@ -253,7 +278,10 @@ def validaciones(request):
         if classification:
             queryset = queryset.filter(clasificacion=classification)
         if identifier and request.user.is_staff:
-            queryset = queryset.filter(Q(co_id=identifier) | Q(linea=identifier))
+            identifier_query = Q(linea=identifier)
+            if identifier.isdigit():
+                identifier_query |= Q(co_id=identifier)
+            queryset = queryset.filter(identifier_query)
         for item in queryset.order_by("id_resultado").iterator(chunk_size=500):
             row = _result_display(item, request.user.is_staff)
             operations.add(row["operation"])
@@ -304,12 +332,12 @@ def validation_start(request):
             user=request.user,
             ip_address=_client_ip(request),
         )
-    except DuplicateExecution as error:
+    except (DuplicateExecution, InvalidExecutionPeriod) as error:
         messages.error(request, str(error))
         return redirect("validaciones")
     start_background_execution(execution.pk)
     messages.success(request, f"La ejecución #{execution.pk} comenzó en segundo plano.")
-    return redirect(f"/validaciones/?ejecucion={execution.pk}")
+    return redirect(f"{reverse('validaciones')}?ejecucion={execution.pk}")
 
 
 @login_required
@@ -347,10 +375,16 @@ def validation_export(request, execution_id):
         row = _result_display(item, True)
         writer.writerow(
             [
-                item.pk, item.co_id, item.linea, row["operation"], row["campaign"],
+                item.pk, item.co_id, _csv_safe(item.linea), _csv_safe(row["operation"]),
+                _csv_safe(row["campaign"]),
                 item.plan_monto, item.descuento_esperado, item.descuento_aplicado,
                 item.diferencia, item.clasificacion, item.codigo_motivo,
-                item.descripcion_motivo,
+                _csv_safe(item.descripcion_motivo),
             ]
         )
     return response
+
+
+def _csv_safe(value):
+    text = str(value or "")
+    return "'" + text if text.startswith(("=", "+", "-", "@")) else text

@@ -2,7 +2,7 @@
 {% block actions %}<a class="button secondary" href="{% url 'campanas' %}">Volver a campañas</a>{% endblock %}
 {% block content %}
 {% if record %}<section class="context-bar"><span>Origen: {{ record.source }}</span><span>ID {{ record.origin_id }}</span><span>Versión actual: {{ record.version|default:'Fuente' }}</span><span class="badge {% if record.active %}success{% else %}muted{% endif %}">{{ record.status_display }}</span></section>{% endif %}
-<form class="panel form-panel" method="post" novalidate>{% csrf_token %}
+<form class="panel form-panel" method="post" novalidate data-confirm="¿Confirma que desea guardar esta nueva versión?" data-loading-label="Guardando…">{% csrf_token %}
   {% if form.non_field_errors %}<div class="alert error">{{ form.non_field_errors }}</div>{% endif %}
   <h2>Condiciones comerciales</h2>
   <div class="form-grid">
@@ -12,7 +12,7 @@
     <label>Plan mínimo (S/){{ form.plan_minimo }}{{ form.plan_minimo.errors }}</label>
     <label>Plan máximo (S/){{ form.plan_maximo }}{{ form.plan_maximo.errors }}</label>
     <label>Tipo de beneficio{{ form.tipo_beneficio }}{{ form.tipo_beneficio.errors }}</label>
-    <label>Valor del beneficio{{ form.valor_beneficio }}<small>Use 50 para 50% o 10 para S/ 10.</small>{{ form.valor_beneficio.errors }}</label>
+    <label>Valor del beneficio<div class="affixed-input"><span data-benefit-prefix>S/</span>{{ form.valor_beneficio }}<span data-benefit-suffix>%</span></div><small>Use 50 para 50% o 10 para S/ 10.</small>{{ form.valor_beneficio.errors }}</label>
     <label>Duración (meses){{ form.periodo_meses }}{{ form.periodo_meses.errors }}</label>
     <label>Estado{{ form.estado }}{{ form.estado.errors }}</label>
     <label>Vigencia inicial{{ form.vigencia_ini }}{{ form.vigencia_ini.errors }}</label>
@@ -23,5 +23,27 @@
   {% if record %}<div class="change-reason"><label>Motivo de modificación{{ form.motivo_modificacion }}{{ form.motivo_modificacion.errors }}<small>Obligatorio. Se guardará en la auditoría.</small></label></div>{% endif %}
   <div class="form-actions"><button class="button primary" type="submit">Guardar nueva versión</button><a class="button secondary" href="{% url 'campanas' %}">Cancelar</a></div>
 </form>
-{% if history %}<section class="panel history-panel"><h2>Historial de versiones</h2><div class="table-wrap"><table><thead><tr><th>Versión</th><th>Beneficio</th><th>Vigencia</th><th>Estado</th><th>Responsable</th><th>Fecha</th></tr></thead><tbody>{% for item in history %}<tr><td>v{{ item.version }}</td><td>{% if item.tipo_beneficio == 'PORCENTAJE' %}{{ item.valor_beneficio }} (factor){% else %}S/ {{ item.valor_beneficio }}{% endif %}</td><td>{{ item.vigencia_ini|date:'d/m/Y' }} – {{ item.vigencia_fin|date:'d/m/Y' }}</td><td>{{ item.estado }}</td><td>{{ item.usuario_creacion.get_full_name }}</td><td>{{ item.fecha_creacion|date:'d/m/Y H:i' }}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
+{% if history %}
+<section class="panel history-panel">
+  <h2>Historial de versiones</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Versión</th><th>Cambios</th><th>Motivo</th><th>Vigencia</th><th>Estado</th><th>Responsable</th><th>Fecha</th></tr></thead>
+      <tbody>
+        {% for entry in history %}
+        <tr>
+          <td>v{{ entry.version.version }}</td>
+          <td>{{ entry.changed_fields }}</td>
+          <td>{{ entry.reason|default:'Creación inicial' }}</td>
+          <td>{{ entry.version.vigencia_ini|date:'d/m/Y' }} – {{ entry.version.vigencia_fin|date:'d/m/Y' }}</td>
+          <td>{{ entry.version.estado }}</td>
+          <td>{{ entry.version.usuario_creacion.get_full_name|default:entry.version.usuario_creacion.username }}</td>
+          <td>{{ entry.version.fecha_creacion|date:'d/m/Y H:i' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
 {% endblock %}
