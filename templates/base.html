@@ -19,7 +19,7 @@
   <div class="shell">
     <header class="topbar">
       <div><small>PORTAL DE CONTROL AUTOMÁTICO</small><strong>Campañas y descuentos</strong></div>
-      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">Cerrar sesión</button></form>
+      <div class="user-actions"><span>{{ request.user.get_full_name|default:request.user.username }}</span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">Cerrar sesión</button></form></div>
     </header>
     <main>
       <div class="heading"><div><span>CONTROL Y MEJORAS</span><h1>{{ title }}</h1></div>{% block actions %}{% endblock %}</div>

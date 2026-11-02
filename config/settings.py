@@ -48,6 +48,8 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {"default": database_config(os.environ, BASE_DIR)}
+AUTH_USER_MODEL = "portal.PortalUser"
+AUTHENTICATION_BACKENDS = ["portal.auth_backends.PortalBackend"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -68,6 +70,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_COOKIE_NAME = "gestion_campanas_session"
+SESSION_COOKIE_AGE = 8 * 60 * 60
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = flag(os.environ, "COOKIE_SECURE", "false")
 CSRF_COOKIE_SECURE = flag(os.environ, "COOKIE_SECURE", "false")
@@ -95,3 +101,4 @@ BASE_CF_CSV_PATH = project_path(
 COMMERCIAL_XLSX_PATH = project_path(
     "COMMERCIAL_XLSX_PATH", "data/incoming/Consolidado de Movil Masivo_Negocios.xlsx"
 )
+CAMPAIGN_SOURCE = os.getenv("CAMPAIGN_SOURCE", "oracle").strip().lower()

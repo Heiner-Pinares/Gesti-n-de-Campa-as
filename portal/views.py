@@ -4,7 +4,8 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-from .source_csv import CampaignSourceUnavailable, load_campaigns
+from .campaign_repository import load_configured_campaigns
+from .source_csv import CampaignSourceUnavailable
 
 
 def campaign_display(row):
@@ -27,7 +28,7 @@ def campaign_display(row):
 @login_required
 def inicio(request):
     try:
-        campaigns = load_campaigns(settings.CAMPAIGNS_CSV_PATH)
+        campaigns = load_configured_campaigns(settings)
         active_count = sum(row.get("ESTADO") == "A" for row in campaigns)
         source_state = "Disponible"
     except CampaignSourceUnavailable:
@@ -52,7 +53,7 @@ def campanas(request):
     error = None
     rows = []
     try:
-        rows = [campaign_display(row) for row in load_campaigns(settings.CAMPAIGNS_CSV_PATH)]
+        rows = [campaign_display(row) for row in load_configured_campaigns(settings)]
         if query:
             rows = [
                 row for row in rows
