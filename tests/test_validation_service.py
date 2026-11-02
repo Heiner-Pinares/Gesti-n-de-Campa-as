@@ -62,7 +62,22 @@ def test_effective_rules_keep_portal_version(monkeypatch):
 
     assert len(rules) == 1
     assert rules[0].benefit_value == Decimal("0.50")
+    assert rules[0].plan_code is None
     assert versions == {"VERSION-3": 3}
+
+
+def test_different_source_product_identifier_does_not_block_confirmed_rule(monkeypatch):
+    monkeypatch.setattr("validaciones.service.effective_rule_records", lambda config: [record(cod_plan="3021")])
+    rules, _ = build_effective_rules(SimpleNamespace())
+
+    result = evaluate_source_case(
+        source(prod_offer="MaxIlim79_90SY_VM3One"),
+        rules,
+        {2002: "Portabilidad"},
+        Decimal("0.01"),
+    )
+
+    assert result.status == ValidationStatus.CORRECT
 
 
 def test_multiple_discounts_require_review():
@@ -88,16 +103,30 @@ def test_configured_case_is_evaluated_without_sql_case_when(monkeypatch):
     assert result.code == "DESCUENTO_CORRECTO"
 
 
-def test_proration_requires_review_until_business_rule_is_confirmed():
+def test_proration_does_not_block_advance_charge_validation(monkeypatch):
+    monkeypatch.setattr("validaciones.service.effective_rule_records", lambda config: [record()])
+    rules, _ = build_effective_rules(SimpleNamespace())
     result = evaluate_source_case(
         source(plan_prorrateo=Decimal("10.00")),
+        rules,
+        {2002: "Portabilidad"},
+        Decimal("0.01"),
+    )
+
+    assert result.status == ValidationStatus.CORRECT
+    assert result.code == "DESCUENTO_CORRECTO"
+
+
+def test_devolution_requires_review_until_business_rule_is_confirmed():
+    result = evaluate_source_case(
+        source(plan_devolucion=Decimal("10.00")),
         [],
         {2002: "Portabilidad"},
         Decimal("0.01"),
     )
 
     assert result.status == ValidationStatus.REVIEW
-    assert result.code == "PRORRATEO_O_DEVOLUCION"
+    assert result.code == "DEVOLUCION_PENDIENTE"
 
 
 def test_invalid_execution_period_is_rejected_before_database_access():

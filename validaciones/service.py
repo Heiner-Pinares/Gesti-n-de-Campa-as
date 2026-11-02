@@ -92,7 +92,10 @@ def build_effective_rules(config=settings):
                 valid_from=record["valid_from"],
                 valid_to=record["valid_to"],
                 active=record["active"],
-                plan_code=record["cod_plan"] or None,
+                # CFG.COD_PLAN y BASE_CF_BASICO_X.PROD_OFFER no pertenecen al
+                # mismo catálogo. La regla se identifica por campaña,
+                # operación, rango y vigencia hasta contar con un mapeo oficial.
+                plan_code=None,
             )
         )
         version_by_rule[rule_id] = record["version_id"]
@@ -114,15 +117,14 @@ def _precondition_result(source):
             applied_discount=abs(raw_applied) if raw_applied is not None else None,
             code="DESCUENTOS_MULTIPLES",
         )
-    prorated = _decimal(source.get("plan_prorrateo")) or Decimal("0")
     returned = _decimal(source.get("plan_devolucion")) or Decimal("0")
-    if prorated != 0 or returned != 0:
+    if returned != 0:
         raw_applied = _decimal(source.get("descuento_aplicado"))
         return ValidationResult(
             ValidationStatus.REVIEW,
-            "El registro contiene prorrateo o devolución y requiere una regla de cálculo confirmada.",
+            "El registro contiene una devolución y requiere una regla de cálculo confirmada.",
             applied_discount=abs(raw_applied) if raw_applied is not None else None,
-            code="PRORRATEO_O_DEVOLUCION",
+            code="DEVOLUCION_PENDIENTE",
         )
     return None
 
@@ -142,7 +144,7 @@ def evaluate_source_case(source, rules, reason_map, tolerance):
         plan_amount=_decimal(source.get("plan_monto")),
         eligibility_date=_as_date(source.get("fecha_elegibilidad")),
         applied_discount=_decimal(source.get("descuento_aplicado")),
-        plan_code=str(source.get("cod_plan") or "").strip() or None,
+        plan_code=None,
     )
     return validate_case(case, rules, tolerance=tolerance)
 
@@ -159,7 +161,7 @@ def _result_model(execution, source, result, version_by_rule, reason_map):
         "fecha_elegibilidad": source.get("fecha_elegibilidad"),
         "fecha_activacion": source.get("fecha_activacion"),
         "motivo_alta": source.get("motivo_alta"),
-        "codigo_plan": source.get("cod_plan"),
+        "producto_origen": source.get("prod_offer"),
         "cantidad_campanas": int(source.get("cantidad_campanas") or 0),
         "cantidad_descuentos": int(source.get("cantidad_descuentos") or 0),
         "sncode_descuento": source.get("sncode_descuento"),

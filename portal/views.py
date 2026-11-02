@@ -233,6 +233,8 @@ def campaign_edit(request, record_key):
 
 def _result_display(item, show_sensitive):
     evidence = parse_evidence(item.evidencia_json)
+    if not evidence.get("producto_origen") and evidence.get("codigo_plan"):
+        evidence["producto_origen"] = evidence["codigo_plan"]
     return {
         "id": item.pk,
         "contract": str(item.co_id or "—") if show_sensitive else _masked(item.co_id),
