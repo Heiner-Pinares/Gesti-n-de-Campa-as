@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -102,3 +103,27 @@ COMMERCIAL_XLSX_PATH = project_path(
     "COMMERCIAL_XLSX_PATH", "data/incoming/Consolidado de Movil Masivo_Negocios.xlsx"
 )
 CAMPAIGN_SOURCE = os.getenv("CAMPAIGN_SOURCE", "oracle").strip().lower()
+
+
+def integer_list(name, default):
+    values = os.getenv(name, default).split(",")
+    return tuple(int(value.strip()) for value in values if value.strip())
+
+
+try:
+    VALIDATION_REASON_MAP = {
+        int(key): str(value).strip()
+        for key, value in json.loads(
+            os.getenv(
+                "VALIDATION_REASON_MAP_JSON",
+                '{"21":"Migra Pre a Post","2001":"Alta","2002":"Portabilidad"}',
+            )
+        ).items()
+    }
+except (TypeError, ValueError) as error:
+    raise ValueError("VALIDATION_REASON_MAP_JSON no contiene un objeto JSON válido.") from error
+
+VALIDATION_EXCLUDED_SPCODES = integer_list("VALIDATION_EXCLUDED_SPCODES", "3674")
+VALIDATION_MAX_DAYS = int(os.getenv("VALIDATION_MAX_DAYS", "31"))
+VALIDATION_BATCH_SIZE = int(os.getenv("VALIDATION_BATCH_SIZE", "500"))
+VALIDATION_TOLERANCE = os.getenv("VALIDATION_TOLERANCE", "0.01").strip()

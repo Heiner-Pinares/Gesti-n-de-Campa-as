@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }} · Control de Campañas</title>
   <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
   <aside class="sidebar">
@@ -23,8 +24,10 @@
     </header>
     <main>
       <div class="heading"><div><span>CONTROL Y MEJORAS</span><h1>{{ title }}</h1></div>{% block actions %}{% endblock %}</div>
+      {% if messages %}<div class="messages">{% for message in messages %}<div class="alert {{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}</div>{% endif %}
       {% block content %}{% endblock %}
     </main>
   </div>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

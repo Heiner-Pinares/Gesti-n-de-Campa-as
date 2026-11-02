@@ -1,15 +1,21 @@
 {% extends 'base.html' %}
+{% block extra_head %}{% if latest.is_active_run %}<meta http-equiv="refresh" content="10">{% endif %}{% endblock %}
 {% block content %}
-<section class="metrics">
+{% if campaign_error %}<div class="alert error">{{ campaign_error }}</div>{% endif %}
+<section class="metrics metrics-six">
   <article><span>Campañas activas</span><strong>{% if active_count is None %}—{% else %}{{ active_count }}{% endif %}</strong><small>Fuente: {{ source_state }}</small></article>
-  <article><span>Última ejecución</span><strong>—</strong><small>Nunca ejecutado</small></article>
-  <article><span>Registros procesados</span><strong>—</strong><small>Sin ejecución disponible</small></article>
-  <article><span>Por revisar</span><strong>—</strong><small>Sin ejecución disponible</small></article>
+  <article><span>Estado del proceso</span><strong class="metric-status">{% if latest %}{{ latest.status_label }}{% else %}Nunca ejecutado{% endif %}</strong><small>{% if latest %}Ejecución #{{ latest.id_ejecucion }}{% else %}Sin ejecuciones registradas{% endif %}</small></article>
+  <article><span>Registros procesados</span><strong>{% if latest %}{{ latest.total_evaluados }}{% else %}—{% endif %}</strong><small>{% if latest %}Periodo {{ latest.fecha_desde|date:'d/m/Y' }} – {{ latest.fecha_hasta|date:'d/m/Y' }}{% else %}Sin ejecución disponible{% endif %}</small></article>
+  <article><span>Correctos</span><strong>{% if latest %}{{ latest.total_correctos }}{% else %}—{% endif %}</strong><small>Validaciones conformes</small></article>
+  <article><span>Errores</span><strong>{% if latest %}{{ latest.total_errores }}{% else %}—{% endif %}</strong><small>Diferencias comprobadas</small></article>
+  <article><span>Por revisar</span><strong>{% if latest %}{{ latest.total_revisar }}{% else %}—{% endif %}</strong><small>Información o regla pendiente</small></article>
 </section>
-<section class="panel empty-state">
-  <div class="status-dot"></div>
-  <h2>Oracle y el almacenamiento están habilitados</h2>
-  <p>El portal ya puede leer las campañas y usar sus tablas propias. Todavía no existen ejecuciones del motor de validación.</p>
-  <div class="actions"><a class="button primary" href="{% url 'campanas' %}">Administrar campañas</a><a class="button secondary" href="{% url 'validaciones' %}">Revisar validaciones</a></div>
+<section class="panel process-summary">
+  {% if latest %}
+    <div><span class="eyebrow">ÚLTIMA EJECUCIÓN</span><h2>{{ latest.status_label }}</h2><p>Solicitada el {{ latest.fecha_solicitud|date:'d/m/Y H:i' }} · {{ latest.tipo_ejecucion|title }}{% if latest.usuario_ejecucion %} · {{ latest.usuario_ejecucion.get_full_name }}{% endif %}</p>{% if latest.mensaje_error %}<div class="alert error">{{ latest.mensaje_error }}</div>{% endif %}{% if latest.is_active_run %}<p class="notice">La página se actualizará automáticamente mientras continúa el procesamiento.</p>{% endif %}</div>
+  {% else %}
+    <div><span class="eyebrow">ESTADO INICIAL</span><h2>Listo para validar</h2><p>Oracle, las campañas y las tablas de resultados están disponibles. Seleccione un periodo para iniciar la primera ejecución.</p></div>
+  {% endif %}
+  <div class="actions actions-left"><a class="button primary" href="{% url 'campanas' %}">Administrar campañas</a><a class="button secondary" href="{% url 'validaciones' %}">Revisar validaciones</a></div>
 </section>
 {% endblock %}

@@ -1,18 +1,17 @@
 {% extends 'base.html' %}
-{% block actions %}<button class="button primary" disabled title="Requiere persistencia aprobada">Nueva campaña</button>{% endblock %}
+{% block actions %}{% if request.user.is_staff %}<a class="button primary" href="{% url 'campaign_create' %}">Nueva campaña</a>{% endif %}{% endblock %}
 {% block content %}
 <form class="filters" method="get">
   <label>Buscar<input name="q" value="{{ q }}" placeholder="Nombre, ID o código"></label>
-  <label>Operación<select name="operacion"><option value="">Todas</option><option {% if operation == 'Portabilidad' %}selected{% endif %}>Portabilidad</option><option {% if operation == 'Migra Pre a Post' %}selected{% endif %}>Migra Pre a Post</option></select></label>
-  <label>Estado<select name="estado"><option value="">Todos</option><option value="A" {% if status == 'A' %}selected{% endif %}>Activa</option><option value="D" {% if status == 'D' %}selected{% endif %}>Desactivada</option></select></label>
+  <label>Operación<select name="operacion"><option value="">Todas</option>{% for value in operations %}<option value="{{ value }}" {% if operation == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+  <label>Estado<select name="estado"><option value="">Todos</option><option value="A" {% if status == 'A' %}selected{% endif %}>Activa</option><option value="I" {% if status == 'I' %}selected{% endif %}>Inactiva</option></select></label>
   <button class="button secondary" type="submit">Filtrar</button>
 </form>
 {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
-<section class="panel table-panel">
-  <div class="table-wrap"><table><thead><tr><th>Campaña</th><th>Operación</th><th>Plan</th><th>Beneficio</th><th>Duración</th><th>Vigencia</th><th>Estado</th></tr></thead><tbody>
-  {% for row in rows %}<tr><td><strong>{{ row.NOMBRE_CAMPANA }}</strong><small>ID {{ row.ID_CAMPANA }} · Código {{ row.COD_PLAN|default:'—' }}</small></td><td>{{ row.ESCENARIO }}</td><td>S/ {{ row.PLAN_MINIMO }} – S/ {{ row.PLAN_MAXIMO }}</td><td>{{ row.BENEFICIO_DISPLAY }}</td><td>{{ row.PERIODO }} meses</td><td>{{ row.VIGENCIA_INI|default:'—' }} – {{ row.VIGENCIA_FIN|default:'—' }}</td><td><span class="badge {% if row.ESTADO == 'A' %}success{% else %}muted{% endif %}">{% if row.ESTADO == 'A' %}Activa{% else %}Desactivada{% endif %}</span></td></tr>
-  {% empty %}<tr><td colspan="7" class="empty-cell">No hay campañas para mostrar.</td></tr>{% endfor %}
-  </tbody></table></div>
-</section>
-<p class="notice">Vista de solo lectura. La edición y el versionamiento se habilitarán únicamente después de aprobar el modelo y los permisos de escritura.</p>
+<section class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Campaña</th><th>Operación</th><th>Plan</th><th>Beneficio</th><th>Duración</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+{% for row in page %}<tr><td><strong>{{ row.name }}</strong><small>ID {{ row.origin_id }} · Código {{ row.cod_plan|default:'—' }} · {{ row.source }}{% if row.version %} v{{ row.version }}{% endif %}</small></td><td>{{ row.operation|default:'—' }}</td><td>{{ row.plan_display }}</td><td>{{ row.benefit_display }}</td><td>{{ row.duration }} meses</td><td>{{ row.valid_from|date:'d/m/Y'|default:'—' }} – {{ row.valid_to|date:'d/m/Y'|default:'—' }}</td><td><span class="badge {% if row.active %}success{% else %}muted{% endif %}">{{ row.status_display }}</span></td><td>{% if request.user.is_staff %}<a class="table-link" href="{% url 'campaign_edit' row.record_key %}">Ver / editar</a>{% else %}<span class="muted-text">Solo consulta</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="8" class="empty-cell">No hay campañas para mostrar.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% if page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Paginación"><span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span><div>{% if page.has_previous %}<a class="button secondary" href="?pagina={{ page.previous_page_number }}&q={{ q|urlencode }}&operacion={{ operation|urlencode }}&estado={{ status }}">Anterior</a>{% endif %}{% if page.has_next %}<a class="button secondary" href="?pagina={{ page.next_page_number }}&q={{ q|urlencode }}&operacion={{ operation|urlencode }}&estado={{ status }}">Siguiente</a>{% endif %}</div></nav>{% endif %}
+<p class="notice">Las ediciones se guardan como versiones nuevas en las tablas propias del portal. La tabla fuente de campañas no se modifica.</p>
 {% endblock %}
