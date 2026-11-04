@@ -92,7 +92,14 @@ def test_authenticated_portal_pages_render_with_real_portal_tables(client, porta
     with patch("portal.views.list_effective_campaigns", return_value=[]):
         assert client.get(reverse("inicio")).status_code == 200
         assert client.get(reverse("campanas")).status_code == 200
-    assert client.get(reverse("validaciones")).status_code == 200
+    validation_response = client.get(
+        reverse("validaciones"),
+        {"ejecucion": execution.pk, "resultado": "CORRECTO"},
+    )
+    assert validation_response.status_code == 200
+    validation_html = validation_response.content.decode()
+    assert 'data-result-filter="CORRECTO" aria-current="true"' in validation_html
+    assert f"?ejecucion={execution.pk}&amp;resultado=ERROR" in validation_html
     assert client.get(reverse("campaign_edit", args=[f"V-{version.pk}"])).status_code == 200
     assert client.get(reverse("validation_detail", args=[result.pk])).status_code == 200
 

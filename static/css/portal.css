@@ -171,6 +171,12 @@ td small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px
 .execution-select select { min-width: 290px; }
 .validation-metrics { grid-template-columns: repeat(5, minmax(0,1fr)); }
 .validation-metrics .metric-card { min-height: 125px; }
+.metric-filter { cursor: pointer; }
+.metric-filter .filter-hint { position: absolute; right: 15px; bottom: 13px; color: var(--metric-color); font-size: 9px; font-weight: 750; opacity: 0; transform: translateY(4px); transition: opacity .16s ease, transform .16s ease; }
+.metric-filter:hover .filter-hint, .metric-filter:focus-visible .filter-hint, .metric-filter.active .filter-hint { opacity: 1; transform: translateY(0); }
+.metric-filter.active { border-color: var(--metric-color); background: linear-gradient(145deg, #fff, #fafbfd); box-shadow: 0 0 0 2px color-mix(in srgb, var(--metric-color) 16%, transparent), var(--shadow); transform: translateY(-2px); }
+.metric-filter.active::before { width: 5px; }
+.metric-filter.active > span:first-child { color: var(--metric-color); }
 .validation-filters { grid-template-columns: 1fr 1fr 1.5fr 1.2fr auto; }
 
 .context-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 13px 16px; margin-bottom: 16px; color: var(--muted); border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: 12px; }
