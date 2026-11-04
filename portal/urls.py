@@ -6,6 +6,12 @@ urlpatterns = [
     path("", views.inicio, name="inicio"),
     path("campanas/", views.campanas, name="campanas"),
     path("campanas/nueva/", views.campaign_create, name="campaign_create"),
+    path("campanas/fuente-comercial/", views.commercial_source, name="commercial_source"),
+    path(
+        "campanas/fuente-comercial/descargar/",
+        views.commercial_source_download,
+        name="commercial_source_download",
+    ),
     path("campanas/<str:record_key>/", views.campaign_edit, name="campaign_edit"),
     path("validaciones/", views.validaciones, name="validaciones"),
     path("validaciones/ejecutar/", views.validation_start, name="validation_start"),

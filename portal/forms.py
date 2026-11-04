@@ -1,6 +1,30 @@
 from decimal import Decimal
+from pathlib import Path
 
 from django import forms
+from django.conf import settings
+
+
+class CommercialWorkbookUploadForm(forms.Form):
+    archivo = forms.FileField(
+        label="Nuevo Consolidado",
+        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+    )
+    confirmacion = forms.BooleanField(
+        label="Confirmo que este archivo es la versión comercial autorizada.",
+    )
+
+    def clean_archivo(self):
+        uploaded = self.cleaned_data["archivo"]
+        if Path(uploaded.name).suffix.casefold() != ".xlsx":
+            raise forms.ValidationError("Seleccione un archivo con extensión .xlsx.")
+        maximum = settings.COMMERCIAL_WORKBOOK_MAX_BYTES
+        if uploaded.size > maximum:
+            limit_mb = maximum // (1024 * 1024)
+            raise forms.ValidationError(f"El archivo supera el límite de {limit_mb} MB.")
+        if uploaded.size == 0:
+            raise forms.ValidationError("El archivo está vacío.")
+        return uploaded
 
 
 class CampaignForm(forms.Form):

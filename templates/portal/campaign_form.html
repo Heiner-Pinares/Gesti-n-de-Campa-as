@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block page_description %}<p>Configura condiciones comerciales con historial y trazabilidad.</p>{% endblock %}
 {% block actions %}<a class="button secondary" href="{% url 'campanas' %}">Volver a campañas</a>{% endblock %}
 {% block content %}
 {% if record %}<section class="context-bar"><span>Origen: {{ record.source }}</span><span>ID {{ record.origin_id }}</span><span>Versión actual: {{ record.version|default:'Fuente' }}</span><span class="badge {% if record.active %}success{% else %}muted{% endif %}">{{ record.status_display }}</span></section>{% endif %}

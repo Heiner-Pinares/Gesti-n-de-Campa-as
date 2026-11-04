@@ -1,21 +1,18 @@
 {% extends 'base.html' %}
 {% block extra_head %}{% if latest.is_active_run %}<meta http-equiv="refresh" content="10">{% endif %}{% endblock %}
+{% block page_description %}<p>Resumen operativo de campañas y controles de facturación.</p>{% endblock %}
 {% block content %}
 {% if campaign_error %}<div class="alert error">{{ campaign_error }}</div>{% endif %}
-<section class="metrics metrics-six">
-  <article><span>Campañas activas</span><strong>{% if active_count is None %}—{% else %}{{ active_count }}{% endif %}</strong><small>Fuente: {{ source_state }}</small></article>
-  <article><span>Estado del proceso</span><strong class="metric-status">{% if latest %}{{ latest.status_label }}{% else %}Nunca ejecutado{% endif %}</strong><small>{% if latest %}Ejecución #{{ latest.id_ejecucion }}{% else %}Sin ejecuciones registradas{% endif %}</small></article>
-  <article><span>Registros procesados</span><strong>{% if latest %}{{ latest.total_evaluados }}{% else %}—{% endif %}</strong><small>{% if latest %}Periodo {{ latest.fecha_desde|date:'d/m/Y' }} – {{ latest.fecha_hasta|date:'d/m/Y' }}{% else %}Sin ejecución disponible{% endif %}</small></article>
-  <article><span>Correctos</span><strong>{% if latest %}{{ latest.total_correctos }}{% else %}—{% endif %}</strong><small>Validaciones conformes</small></article>
-  <article><span>Errores</span><strong>{% if latest %}{{ latest.total_errores }}{% else %}—{% endif %}</strong><small>Diferencias comprobadas</small></article>
-  <article><span>Por revisar</span><strong>{% if latest %}{{ latest.total_revisar }}{% else %}—{% endif %}</strong><small>Información o regla pendiente</small></article>
+<section class="metrics metrics-six" aria-label="Indicadores principales">
+  <article class="metric-card metric-campaigns"><div class="metric-top"><span>Campañas activas</span><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v5H4zM4 14h7v5H4zM15 14h5v5h-5z"/></svg></span></div><strong>{% if active_count is None %}—{% else %}{{ active_count }}{% endif %}</strong><small>Fuente Oracle: {{ source_state }}</small></article>
+  <article class="metric-card metric-process"><div class="metric-top"><span>Estado del proceso</span><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/></svg></span></div><strong class="metric-status">{% if latest %}{{ latest.status_label }}{% else %}Sin ejecutar{% endif %}</strong><small>{% if latest %}Ejecución #{{ latest.id_ejecucion }}{% else %}Aún no hay ejecuciones{% endif %}</small></article>
+  <article class="metric-card metric-processed"><div class="metric-top"><span>Procesados</span><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M7 3h10v4H7zM5 5H3v16h18V5h-2M7 12h10M7 16h7"/></svg></span></div><strong>{% if latest %}{{ latest.total_evaluados }}{% else %}—{% endif %}</strong><small>{% if latest %}{{ latest.fecha_desde|date:'d/m/Y' }} – {{ latest.fecha_hasta|date:'d/m/Y' }}{% else %}Sin periodo disponible{% endif %}</small></article>
+  <article class="metric-card metric-correct"><div class="metric-top"><span>Correctos</span><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></div><strong>{% if latest %}{{ latest.total_correctos }}{% else %}—{% endif %}</strong><small>Validaciones conformes</small></article>
+  <article class="metric-card metric-errors"><div class="metric-top"><span>Errores</span><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></span></div><strong>{% if latest %}{{ latest.total_errores }}{% else %}—{% endif %}</strong><small>Diferencias comprobadas</small></article>
+  <article class="metric-card metric-review"><div class="metric-top"><span>Por revisar</span><span class="metric-icon"><svg viewBox="0 0 24 24"><path d="M12 8v5m0 4h.01M10.3 4.7 3.2 18a1.4 1.4 0 0 0 1.2 2h15.2a1.4 1.4 0 0 0 1.2-2L13.7 4.7a1.9 1.9 0 0 0-3.4 0z"/></svg></span></div><strong>{% if latest %}{{ latest.total_revisar }}{% else %}—{% endif %}</strong><small>Información o regla pendiente</small></article>
 </section>
 <section class="panel process-summary">
-  {% if latest %}
-    <div><span class="eyebrow">ÚLTIMA EJECUCIÓN</span><h2>{{ latest.status_label }}</h2><p>Solicitada el {{ latest.fecha_solicitud|date:'d/m/Y H:i' }} · {{ latest.tipo_ejecucion|title }}{% if latest.usuario_ejecucion %} · {{ latest.usuario_ejecucion.get_full_name }}{% endif %}</p>{% if latest.mensaje_error %}<div class="alert error">{{ latest.mensaje_error }}</div>{% endif %}{% if latest.is_active_run %}<p class="notice">La página se actualizará automáticamente mientras continúa el procesamiento.</p>{% endif %}</div>
-  {% else %}
-    <div><span class="eyebrow">ESTADO INICIAL</span><h2>Listo para validar</h2><p>Oracle, las campañas y las tablas de resultados están disponibles. Seleccione un periodo para iniciar la primera ejecución.</p></div>
-  {% endif %}
-  <div class="actions actions-left"><a class="button primary" href="{% url 'campanas' %}">Administrar campañas</a><a class="button secondary" href="{% url 'validaciones' %}">Revisar validaciones</a></div>
+  <div class="process-copy"><span class="eyebrow">{% if latest %}ÚLTIMA EJECUCIÓN{% else %}ESTADO INICIAL{% endif %}</span><h2>{% if latest %}{{ latest.status_label }}{% else %}Todo listo para comenzar{% endif %}</h2>{% if latest %}<p>Solicitada el {{ latest.fecha_solicitud|date:'d/m/Y H:i' }} · {{ latest.tipo_ejecucion|title }}{% if latest.usuario_ejecucion %} · {{ latest.usuario_ejecucion.get_full_name }}{% endif %}</p>{% else %}<p>Oracle, las campañas y el almacenamiento de resultados están disponibles.</p>{% endif %}{% if latest.mensaje_error %}<div class="alert error">{{ latest.mensaje_error }}</div>{% endif %}{% if latest.is_active_run %}<p class="live-notice"><span></span>Procesando en segundo plano. Esta página se actualizará automáticamente.</p>{% endif %}</div>
+  <div class="process-actions"><a class="button primary" href="{% url 'validaciones' %}">Revisar validaciones</a><a class="button secondary" href="{% url 'campanas' %}">Administrar campañas</a></div>
 </section>
 {% endblock %}

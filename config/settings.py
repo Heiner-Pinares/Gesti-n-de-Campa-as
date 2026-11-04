@@ -102,6 +102,9 @@ BASE_CF_CSV_PATH = project_path(
 COMMERCIAL_XLSX_PATH = project_path(
     "COMMERCIAL_XLSX_PATH", "data/incoming/Consolidado de Movil Masivo_Negocios.xlsx"
 )
+COMMERCIAL_WORKBOOK_MAX_BYTES = int(
+    os.getenv("COMMERCIAL_WORKBOOK_MAX_MB", "25")
+) * 1024 * 1024
 CAMPAIGN_SOURCE = os.getenv("CAMPAIGN_SOURCE", "oracle").strip().lower()
 
 

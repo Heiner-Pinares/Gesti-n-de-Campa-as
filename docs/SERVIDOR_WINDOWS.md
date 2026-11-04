@@ -31,6 +31,8 @@ Estos comandos crean `.venv`, instalan versiones fijadas y ejecutan pruebas con 
 3. Restringir `.env`, `secrets` y `data\incoming` a la cuenta de servicio y administradores.
 4. Copiar las fuentes a `data\incoming` o configurar rutas absolutas mediante variables de entorno.
 
+La cuenta que ejecuta Waitress necesita permisos de lectura y modificación sobre la carpeta configurada en `COMMERCIAL_XLSX_PATH`. Son necesarios para que un administrador pueda actualizar el Consolidado desde el portal y para crear el respaldo `.previous.xlsx`. No otorgue acceso a usuarios de Windows que no administren el proceso.
+
 No copiar el `.env`, secretos, sesiones o datos de 4DX.
 
 ## Diagnóstico Oracle
@@ -104,6 +106,8 @@ Después de actualizar el código en un servidor ya instalado, vuelva a recopila
 ```powershell
 .\.venv\Scripts\python.exe manage.py collectstatic --noinput
 ```
+
+Si desea cambiar el límite de carga del Consolidado, configure `COMMERCIAL_WORKBOOK_MAX_MB` en `.env` (25 MB por defecto) y reinicie el portal.
 
 ## Motor de validación
 

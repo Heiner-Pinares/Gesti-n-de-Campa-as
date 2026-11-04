@@ -14,6 +14,14 @@ Para porcentajes, ingrese `50` si el descuento es 50%. Para montos fijos, ingres
 
 Las campañas originales continúan en `CFG_CAMPANAS_PORTABILIDAD`. Las versiones administradas se guardan únicamente en las tablas propias `TBL_*_GC`.
 
+### Fuente comercial Excel
+
+Los administradores pueden abrir **Campañas > Fuente comercial** para actualizar `Consolidado de Movil Masivo_Negocios.xlsx` cuando se publique una nueva versión autorizada.
+
+El portal acepta únicamente archivos `.xlsx` de hasta 25 MB, comprueba que el libro sea válido y que incluya la hoja **Campañas** con registros. Antes de reemplazarlo, conserva la versión anterior como `Consolidado de Movil Masivo_Negocios.previous.xlsx` y registra el usuario, fecha, dirección IP y metadatos técnicos en la auditoría.
+
+Esta carga no cambia campañas, reglas ni resultados automáticamente. El Excel es una referencia comercial complementaria; cualquier regla nueva debe revisarse y versionarse expresamente en **Campañas**. El motor de validación continúa leyendo sus datos operativos desde Oracle.
+
 ## Validaciones
 
 Un administrador selecciona las fechas y pulsa **Ejecutar validación**. La página puede cerrarse mientras el proceso continúa dentro del servidor web. El estado se actualiza automáticamente cada diez segundos.

@@ -1,17 +1,22 @@
 {% extends 'base.html' %}
-{% block actions %}{% if request.user.is_staff %}<a class="button primary" href="{% url 'campaign_create' %}">Nueva campaña</a>{% endif %}{% endblock %}
+{% block page_description %}<p>Consulta, filtra y versiona las reglas comerciales vigentes.</p>{% endblock %}
+{% block actions %}{% if request.user.is_staff %}<a class="button secondary" href="{% url 'commercial_source' %}"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/></svg>Fuente comercial</a><a class="button primary" href="{% url 'campaign_create' %}"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nueva campaña</a>{% endif %}{% endblock %}
 {% block content %}
+<section class="source-banner">
+  <span class="source-banner-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 10h16M9 10v9"/></svg></span>
+  <div><strong>Campañas operativas desde Oracle</strong><p>Las modificaciones del portal se guardan como nuevas versiones auditables; la tabla fuente no se altera.</p></div>
+  <span class="badge success">Conectado</span>
+</section>
 <form class="filters" method="get">
-  <label>Buscar<input name="q" value="{{ q }}" placeholder="Nombre, ID o código"></label>
+  <label class="search-field">Buscar<span class="input-icon"><svg viewBox="0 0 24 24"><path d="m20 20-4.5-4.5M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/></svg></span><input name="q" value="{{ q }}" placeholder="Nombre, ID o código"></label>
   <label>Operación<select name="operacion"><option value="">Todas</option>{% for value in operations %}<option value="{{ value }}" {% if operation == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
   <label>Estado<select name="estado"><option value="">Todos</option><option value="A" {% if status == 'A' %}selected{% endif %}>Activa</option><option value="I" {% if status == 'I' %}selected{% endif %}>Inactiva</option></select></label>
-  <button class="button secondary" type="submit">Filtrar</button>
+  <button class="button secondary" type="submit">Aplicar filtros</button>
 </form>
 {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
-<section class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Campaña</th><th>Operación</th><th>Plan</th><th>Beneficio</th><th>Duración</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
-{% for row in page %}<tr><td><strong>{{ row.name }}</strong><small>ID {{ row.origin_id }} · Código {{ row.cod_plan|default:'—' }} · {{ row.source }}{% if row.version %} v{{ row.version }}{% endif %}</small></td><td>{{ row.operation|default:'—' }}</td><td>{{ row.plan_display }}</td><td>{{ row.benefit_display }}</td><td>{{ row.duration }} meses</td><td>{{ row.valid_from|date:'d/m/Y'|default:'—' }} – {{ row.valid_to|date:'d/m/Y'|default:'—' }}</td><td><span class="badge {% if row.active %}success{% else %}muted{% endif %}">{{ row.status_display }}</span></td><td>{% if request.user.is_staff %}<a class="table-link" href="{% url 'campaign_edit' row.record_key %}">Ver / editar</a>{% else %}<span class="muted-text">Solo consulta</span>{% endif %}</td></tr>
-{% empty %}<tr><td colspan="8" class="empty-cell">No hay campañas para mostrar.</td></tr>{% endfor %}
+<section class="panel table-panel"><div class="table-toolbar"><div><strong>Listado de campañas</strong><span>{{ page.paginator.count }} registro{{ page.paginator.count|pluralize }}</span></div></div><div class="table-wrap"><table><thead><tr><th>Campaña</th><th>Operación</th><th>Rango de plan</th><th>Beneficio</th><th>Duración</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for row in page %}<tr><td><strong>{{ row.name }}</strong><small>ID {{ row.origin_id }} · Código {{ row.cod_plan|default:'—' }} · {{ row.source }}{% if row.version %} v{{ row.version }}{% endif %}</small></td><td>{{ row.operation|default:'—' }}</td><td>{{ row.plan_display }}</td><td><strong>{{ row.benefit_display }}</strong></td><td>{{ row.duration }} meses</td><td>{{ row.valid_from|date:'d/m/Y'|default:'—' }}<small>hasta {{ row.valid_to|date:'d/m/Y'|default:'—' }}</small></td><td><span class="badge {% if row.active %}success{% else %}muted{% endif %}"><span class="badge-dot"></span>{{ row.status_display }}</span></td><td>{% if request.user.is_staff %}<a class="table-action" href="{% url 'campaign_edit' row.record_key %}">Ver / editar <span>→</span></a>{% else %}<span class="muted-text">Solo consulta</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="8" class="empty-cell"><strong>No encontramos campañas</strong><small>Pruebe cambiando los filtros seleccionados.</small></td></tr>{% endfor %}
 </tbody></table></div></section>
 {% if page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Paginación"><span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span><div>{% if page.has_previous %}<a class="button secondary" href="?pagina={{ page.previous_page_number }}&q={{ q|urlencode }}&operacion={{ operation|urlencode }}&estado={{ status }}">Anterior</a>{% endif %}{% if page.has_next %}<a class="button secondary" href="?pagina={{ page.next_page_number }}&q={{ q|urlencode }}&operacion={{ operation|urlencode }}&estado={{ status }}">Siguiente</a>{% endif %}</div></nav>{% endif %}
-<p class="notice">Las ediciones se guardan como versiones nuevas en las tablas propias del portal. La tabla fuente de campañas no se modifica.</p>
 {% endblock %}

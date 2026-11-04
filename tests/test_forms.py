@@ -1,4 +1,10 @@
-from portal.forms import CampaignForm, ValidationRunForm
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+from portal.forms import (
+    CampaignForm,
+    CommercialWorkbookUploadForm,
+    ValidationRunForm,
+)
 
 
 def campaign_data(**changes):
@@ -58,3 +64,13 @@ def test_validation_period_is_bounded():
 
     assert not form.is_valid()
     assert "hasta" in form.errors
+
+
+def test_commercial_workbook_form_rejects_non_xlsx_file():
+    form = CommercialWorkbookUploadForm(
+        {"confirmacion": "on"},
+        {"archivo": SimpleUploadedFile("consolidado.xlsm", b"contenido")},
+    )
+
+    assert not form.is_valid()
+    assert "archivo" in form.errors

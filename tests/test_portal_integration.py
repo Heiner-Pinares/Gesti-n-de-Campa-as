@@ -1,10 +1,15 @@
 from datetime import date
 from decimal import Decimal
+from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
+from django.test import override_settings
 from django.urls import reverse
+from openpyxl import Workbook
 
 from portal.models import (
     CampaignVersion,
@@ -103,6 +108,7 @@ def test_analyst_cannot_open_administration_actions(client, portal_tables):
     client.force_login(user)
 
     assert client.get(reverse("campaign_create")).status_code == 403
+    assert client.get(reverse("commercial_source")).status_code == 403
 
 
 @pytest.mark.django_db(transaction=True)
@@ -146,3 +152,59 @@ def test_administrator_can_create_campaign_and_start_validation(client, portal_t
     execution = ValidationExecution.objects.get()
     start.assert_called_once_with(execution.pk)
     assert ChangeAudit.objects.filter(entidad="EJECUCION", accion="EJECUTAR").count() == 1
+
+
+def _commercial_workbook_bytes(campaign_name="CAMPAÑA AUTORIZADA"):
+    output = BytesIO()
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Campañas"
+    sheet.append(["Campaña", "Operación", "Beneficio"])
+    sheet.append([campaign_name, "Portabilidad", "50%"])
+    workbook.create_sheet("Actualizaciones")
+    workbook.save(output)
+    workbook.close()
+    return output.getvalue()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_administrator_can_replace_commercial_workbook_with_audit(
+    client, portal_tables, tmp_path
+):
+    user = PortalUser.objects.create_user(
+        username="ADMIN",
+        password="prueba-segura",
+        nombre_completo="Administrador de prueba",
+        rol=PortalUser.ROLE_ADMIN,
+    )
+    client.force_login(user)
+    target = Path(tmp_path) / "Consolidado de Movil Masivo_Negocios.xlsx"
+    upload = SimpleUploadedFile(
+        "Consolidado actualizado.xlsx",
+        _commercial_workbook_bytes(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+    with override_settings(COMMERCIAL_XLSX_PATH=target):
+        response = client.post(
+            reverse("commercial_source"),
+            {"archivo": upload, "confirmacion": "on"},
+        )
+        replacement = SimpleUploadedFile(
+            "Consolidado segunda version.xlsx",
+            _commercial_workbook_bytes("CAMPAÑA ACTUALIZADA"),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        second_response = client.post(
+            reverse("commercial_source"),
+            {"archivo": replacement, "confirmacion": "on"},
+        )
+
+    assert response.status_code == 302
+    assert second_response.status_code == 302
+    assert target.is_file()
+    assert target.with_name("Consolidado de Movil Masivo_Negocios.previous.xlsx").is_file()
+    audits = ChangeAudit.objects.filter(entidad="FUENTE_COMERCIAL")
+    assert audits.count() == 2
+    assert all(audit.accion == "ACTUALIZAR" for audit in audits)
+    assert all(audit.usuario == user for audit in audits)

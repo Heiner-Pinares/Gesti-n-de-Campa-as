@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import DatabaseError
 from django.db.models import Q
-from django.http import Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
@@ -29,8 +29,13 @@ from .campaign_service import (
     list_effective_campaigns,
     save_campaign,
 )
-from .forms import CampaignForm, ValidationRunForm
-from .models import ValidationExecution, ValidationStoredResult
+from .commercial_workbook import (
+    CommercialWorkbookError,
+    current_commercial_workbook,
+    replace_commercial_workbook,
+)
+from .forms import CampaignForm, CommercialWorkbookUploadForm, ValidationRunForm
+from .models import ChangeAudit, ValidationExecution, ValidationStoredResult
 from .permissions import administrator_required
 from .source_csv import CampaignSourceUnavailable
 
@@ -229,6 +234,70 @@ def campaign_edit(request, record_key):
             "history": campaign_history_details(record["origin_id"]),
         },
     )
+
+
+@administrator_required
+def commercial_source(request):
+    form = CommercialWorkbookUploadForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            info, backup = replace_commercial_workbook(
+                form.cleaned_data["archivo"],
+                settings.COMMERCIAL_XLSX_PATH,
+                request.user,
+                ip_address=_client_ip(request),
+            )
+        except CommercialWorkbookError as error:
+            form.add_error("archivo", str(error))
+        except PermissionError:
+            form.add_error(
+                "archivo",
+                "La cuenta del portal no tiene permiso para actualizar la carpeta configurada.",
+            )
+        except (OSError, DatabaseError):
+            form.add_error(
+                "archivo",
+                "No se pudo completar la actualización. El archivo anterior se conservó.",
+            )
+        else:
+            message = (
+                f"Se actualizó la fuente comercial con {info['campaign_rows']} registros "
+                'en la hoja "Campañas".'
+            )
+            if backup:
+                message += " La versión anterior quedó respaldada."
+            messages.success(request, message)
+            return redirect("commercial_source")
+
+    current = current_commercial_workbook(settings.COMMERCIAL_XLSX_PATH)
+    try:
+        last_update = (
+            ChangeAudit.objects.filter(entidad="FUENTE_COMERCIAL", accion="ACTUALIZAR")
+            .select_related("usuario")
+            .order_by("-fecha_evento", "-id_auditoria")
+            .first()
+        )
+    except DatabaseError:
+        last_update = None
+    return render(
+        request,
+        "portal/commercial_source.html",
+        {
+            "title": "Fuente comercial",
+            "form": form,
+            "current": current,
+            "last_update": last_update,
+            "max_upload_mb": settings.COMMERCIAL_WORKBOOK_MAX_BYTES // (1024 * 1024),
+        },
+    )
+
+
+@administrator_required
+def commercial_source_download(request):
+    path = settings.COMMERCIAL_XLSX_PATH
+    if not path.is_file():
+        raise Http404("La fuente comercial todavía no está disponible.")
+    return FileResponse(path.open("rb"), as_attachment=True, filename=path.name)
 
 
 def _result_display(item, show_sensitive):

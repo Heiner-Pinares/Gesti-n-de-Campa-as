@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block page_description %}<p>Administra la referencia comercial autorizada sin alterar automáticamente las reglas.</p>{% endblock %}
+{% block actions %}<a class="button secondary" href="{% url 'campanas' %}">Volver a campañas</a>{% endblock %}
+{% block content %}
+<div class="source-layout">
+  <section class="panel source-current">
+    <div class="panel-heading"><span class="panel-icon excel"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zM15 3v5h5M8 12l4 5m0-5-4 5"/></svg></span><div><span class="eyebrow">ARCHIVO EN USO</span><h2>Consolidado de Móvil Masivo</h2><p>Referencia complementaria para el análisis comercial.</p></div></div>
+    {% if current.exists and not current.invalid %}
+      <div class="source-status"><span class="badge success"><span class="badge-dot"></span>Disponible</span><span>Actualizado {{ current.modified_at|date:'d/m/Y H:i' }}</span></div>
+      <dl class="source-facts"><div><dt>Archivo</dt><dd>{{ current.filename }}</dd></div><div><dt>Tamaño</dt><dd>{{ current.size_mb }} MB</dd></div><div><dt>Hojas</dt><dd>{{ current.sheet_count }}</dd></div><div><dt>Registros en Campañas</dt><dd>{{ current.campaign_rows }}</dd></div></dl>
+      <div class="sheet-list"><span>Contenido detectado</span>{% for sheet in current.sheets %}<div><strong>{{ sheet.name }}</strong><small>{{ sheet.rows }} filas · {{ sheet.columns }} columnas</small></div>{% endfor %}</div>
+      <a class="button secondary" href="{% url 'commercial_source_download' %}"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/></svg>Descargar archivo actual</a>
+    {% elif current.invalid %}<div class="alert error">{{ current.error }}</div>
+    {% else %}<div class="empty-inline"><strong>Aún no hay un Consolidado cargado</strong><p>Use el formulario para registrar la primera versión autorizada.</p></div>{% endif %}
+    {% if last_update %}<div class="last-update"><span>Última actualización registrada</span><strong>{{ last_update.fecha_evento|date:'d/m/Y H:i' }} · {{ last_update.usuario.get_full_name|default:last_update.usuario.username }}</strong></div>{% endif %}
+  </section>
+  <section class="panel upload-panel">
+    <span class="eyebrow">NUEVA VERSIÓN</span><h2>Actualizar fuente comercial</h2><p>El nuevo archivo será revisado antes de reemplazar al actual.</p>
+    <form method="post" enctype="multipart/form-data" data-confirm="¿Confirma que desea reemplazar la fuente comercial actual?" data-loading-label="Validando…">{% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert error">{{ form.non_field_errors }}</div>{% endif %}
+      <label class="upload-field" for="{{ form.archivo.id_for_label }}"><span class="upload-icon"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v6h14v-6"/></svg></span><strong>Seleccionar archivo .xlsx</strong><small>Máximo {{ max_upload_mb }} MB · Debe incluir la hoja “Campañas”</small>{{ form.archivo }}</label>
+      {{ form.archivo.errors }}
+      <label class="check-field">{{ form.confirmacion }}<span>{{ form.confirmacion.label }}</span></label>{{ form.confirmacion.errors }}
+      <div class="safety-note"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6zM9 12l2 2 4-5"/></svg><p><strong>Actualización protegida</strong><span>Se conserva un respaldo y se registra usuario, fecha e información técnica. El contenido del Excel no se copia a la auditoría.</span></p></div>
+      <button class="button primary full-width" type="submit">Validar y actualizar</button>
+    </form>
+  </section>
+</div>
+<section class="info-strip"><svg viewBox="0 0 24 24"><path d="M12 8h.01M11 12h1v5h1M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/></svg><p><strong>Importante:</strong> actualizar este Excel no modifica campañas, reglas ni resultados. Cualquier cambio comercial debe revisarse y versionarse expresamente en el portal.</p></section>
+{% endblock %}
