@@ -40,7 +40,7 @@ Documentación principal:
 4. Revise `sql\oracle\001_create_tables_gc.sql` y `scripts\preview_oracle_schema.ps1`.
 5. Cree los objetos autorizados con `scripts\apply_oracle_schema.ps1`.
 6. Cree el administrador con `scripts\create_portal_admin.ps1`.
-7. Inicie el portal mediante `scripts\run_windows.ps1`.
+7. Inicie el portal mediante `scripts\run_windows.ps1` o directamente con `.\.venv\Scripts\python.exe run.py`.
 
 Una validación también puede ejecutarse sin abrir el portal:
 
@@ -49,3 +49,5 @@ Una validación también puede ejecutarse sin abrir el portal:
 ```
 
 No se debe copiar el secreto de 4DX ni ejecutar `manage.py migrate`.
+
+El arranque de Windows usa Waitress en `0.0.0.0:8000`, comprueba Oracle, recopila los archivos estáticos y muestra la URL de acceso para la red corporativa. No publica Oracle ni abre automáticamente el Firewall de Windows.

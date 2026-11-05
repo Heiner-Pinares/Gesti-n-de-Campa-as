@@ -1,16 +1,7 @@
-"""Servidor WSGI para Windows. No crea tablas ni ejecuta migraciones."""
+"""Compatibilidad con el comando histórico de arranque en Windows."""
 
-import os
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-
-from waitress import serve
-
-from config.wsgi import application
+from run import main
 
 
 if __name__ == "__main__":
-    host = os.getenv("WEB_HOST", "0.0.0.0")
-    port = int(os.getenv("WEB_PORT", "8000"))
-    threads = int(os.getenv("WEB_THREADS", "8"))
-    serve(application, host=host, port=port, threads=threads)
+    raise SystemExit(main())

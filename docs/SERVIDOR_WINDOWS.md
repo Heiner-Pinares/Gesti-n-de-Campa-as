@@ -35,6 +35,24 @@ La cuenta que ejecuta Waitress necesita permisos de lectura y modificación sobr
 
 No copiar el `.env`, secretos, sesiones o datos de 4DX.
 
+Para la primera prueba dentro de la red corporativa:
+
+```dotenv
+DEBUG=False
+ALLOWED_HOSTS=*
+HOST=0.0.0.0
+PORT=8000
+THREADS=8
+```
+
+`ALLOWED_HOSTS=*` es temporal. Cuando se confirme la dirección definitiva, reemplácelo, por ejemplo:
+
+```dotenv
+ALLOWED_HOSTS=172.19.194.219,LIMDOCFACTV02
+```
+
+No escriba esa IP en el código ni en `HOST`: Waitress debe continuar escuchando en `0.0.0.0`.
+
 ## Diagnóstico Oracle
 
 ```powershell
@@ -87,15 +105,89 @@ Si el esquema se creó con una versión inicial que usaba `TIMESTAMP WITH TIME Z
 
 La reparación solo afecta las columnas técnicas de fecha de `TBL_*_GC`. Preserva los usuarios existentes y se detiene si detecta datos funcionales que requieran una revisión manual.
 
-## Arranque de verificación
+## Arranque en la red corporativa
 
 ```powershell
 .\scripts\run_windows.ps1
 ```
 
-Waitress escucha en `0.0.0.0:8000` por defecto. El puerto, host y cantidad de hilos se pueden cambiar con `WEB_PORT`, `WEB_HOST` y `WEB_THREADS`.
+El comando directo equivalente es:
+
+```powershell
+.\.venv\Scripts\python.exe run.py
+```
+
+`run.py` realiza, en este orden:
+
+1. Carga `.env` y exige `DEBUG=False`.
+2. Comprueba la conexión Oracle sin crear ni modificar datos.
+3. Ejecuta `collectstatic --noinput`.
+4. Detecta una IPv4 local solo para mostrar la URL.
+5. Inicia Waitress en `0.0.0.0:8000` con ocho hilos por defecto.
+
+No ejecuta migraciones ni DDL. La IP detectada nunca se utiliza como dirección de escucha.
+
+La terminal mostrará:
+
+```text
+Portal iniciado.
+Escuchando en: http://0.0.0.0:8000
+Acceso local: http://127.0.0.1:8000
+Acceso desde la red: http://IP_DEL_SERVIDOR:8000
+Migraciones automáticas: deshabilitadas.
+```
+
+Compruebe la IPv4 vigente del servidor:
+
+```powershell
+ipconfig
+```
+
+Compruebe que el proceso escucha en todas las interfaces:
+
+```powershell
+netstat -ano | findstr :8000
+```
+
+La salida debe contener `0.0.0.0:8000` en estado `LISTENING`. Desde otra computadora de la misma red, abra `http://IP_DEL_SERVIDOR:8000`.
+
+Las variables históricas `WEB_HOST`, `WEB_PORT` y `WEB_THREADS` siguen siendo compatibles, pero para nuevas instalaciones utilice `HOST`, `PORT` y `THREADS`.
 
 No se debe exponer directamente el puerto a Internet. La publicación final debe coordinarse con Infraestructura mediante el proxy inverso corporativo, HTTPS, firewall y nombre DNS aprobados.
+
+## Firewall de Windows
+
+El proyecto no modifica el firewall automáticamente. Primero revise los perfiles activos y si ya existe una regla:
+
+```powershell
+Get-NetConnectionProfile
+Get-NetFirewallRule -DisplayName "Portal interno - puerto 8000" -ErrorAction SilentlyContinue
+```
+
+Si otro equipo no puede acceder y no existe una regla autorizada, ejecute como Administrador únicamente para los perfiles Domain y Private:
+
+```powershell
+netsh advfirewall firewall add rule name="Portal interno - puerto 8000" dir=in action=allow protocol=TCP localport=8000 profile=domain,private
+```
+
+Para eliminarla:
+
+```powershell
+netsh advfirewall firewall delete rule name="Portal interno - puerto 8000"
+```
+
+No abra el perfil Public, no desactive el firewall y no configure port forwarding, ngrok ni exposición en el router.
+
+Si funciona en el servidor pero no desde otro equipo, compruebe:
+
+- Ambos equipos pertenecen a la red corporativa correspondiente.
+- `netstat` muestra `0.0.0.0:8000` y no `127.0.0.1:8000`.
+- `ALLOWED_HOSTS` admite la IP o el nombre usado.
+- El Firewall de Windows permite TCP 8000 en Domain/Private.
+- No hay una VPN o política de red que impida conexiones entre equipos.
+- El puerto 8000 no está ocupado por otro proceso.
+
+Escuchar en `0.0.0.0` publica únicamente el portal web. Oracle continúa como servicio externo en `scan-odscbio:1521`; no abra el puerto 1521 para los usuarios del portal.
 
 ## Persistencia y autenticación
 

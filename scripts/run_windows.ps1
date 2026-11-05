@@ -8,4 +8,4 @@ $env:DB_ENGINE = "oracle"
 $env:ORACLE_POOL = "false"
 $env:AUTO_MIGRATE = "false"
 
-& .\.venv\Scripts\python.exe run_windows.py
+& .\.venv\Scripts\python.exe run.py
