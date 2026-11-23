@@ -94,8 +94,13 @@ def test_production_checks_reject_a_port_different_from_effective_env(
 )
 def test_windows_scripts_do_not_hardcode_the_server_port(script_name):
     root = Path(__file__).resolve().parents[1]
-    content = (root / "scripts" / script_name).read_text(encoding="utf-8")
+    script = root / "scripts" / script_name
+    content = script.read_text(encoding="utf-8")
     assert "8006" not in content
+    assert script.read_bytes().isascii(), (
+        "Los scripts operativos deben permanecer ASCII para que Windows "
+        "PowerShell 5.1 no interprete mal UTF-8 sin BOM."
+    )
 
 
 def test_windows_manager_exposes_required_commands_and_safe_stop_contract():

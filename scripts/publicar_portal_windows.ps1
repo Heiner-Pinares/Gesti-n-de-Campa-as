@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 
 function Stop-Publication {
     param([string]$Message)
-    Write-Host "ERROR DE PUBLICACIÓN: $Message" -ForegroundColor Red
+    Write-Host "ERROR DE PUBLICACION: $Message" -ForegroundColor Red
     exit 1
 }
 
@@ -37,10 +37,10 @@ if ($PublicUrl.Scheme -notin @("http", "https")) {
     Stop-Publication "PublicUrl debe usar http o https."
 }
 if ($PublicUrl.AbsolutePath -ne "/") {
-    Stop-Publication "PublicUrl debe ser la raíz del portal, sin una ruta adicional."
+    Stop-Publication "PublicUrl debe ser la raiz del portal, sin una ruta adicional."
 }
 if ($PublicUrl.Scheme -eq "http" -and -not $AllowInternalHttp) {
-    Stop-Publication "HTTP requiere el switch -AllowInternalHttp y aprobación explícita para la red interna."
+    Stop-Publication "HTTP requiere el switch -AllowInternalHttp y aprobacion explicita para la red interna."
 }
 if ($PublicUrl.Port -ne $config.Port) {
     Stop-Publication "El puerto de PublicUrl ($($PublicUrl.Port)) no coincide con el puerto efectivo del portal ($($config.Port))."
@@ -65,24 +65,24 @@ if ($PublicUrl.Scheme -eq "https") {
         Stop-Publication "Para HTTPS configure COOKIE_SECURE=true."
     }
     if ($proxyHttps.ToLowerInvariant() -ne "true") {
-        Stop-Publication "Para HTTPS detrás del proxy configure TRUST_PROXY_HTTPS=true."
+        Stop-Publication "Para HTTPS detras del proxy configure TRUST_PROXY_HTTPS=true."
     }
     if (@($trustedOrigins.Split(",") | ForEach-Object { $_.Trim().ToLowerInvariant() }) -notcontains $origin.ToLowerInvariant()) {
         Stop-Publication "CSRF_TRUSTED_ORIGINS debe incluir $origin."
     }
 }
 else {
-    Write-Host "ADVERTENCIA: se publicará HTTP interno. No exponga esta URL a Internet." -ForegroundColor Yellow
+    Write-Host "ADVERTENCIA: se publicara HTTP interno. No exponga esta URL a Internet." -ForegroundColor Yellow
 }
 
-Write-Host "Validando el entorno antes de solicitar la contraseña de la cuenta de servicio..."
+Write-Host "Validando el entorno antes de solicitar la contrasena de la cuenta de servicio..."
 $portalManager = Join-Path $PSScriptRoot "portal.ps1"
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $portalManager validate -Port $config.Port
 if ($LASTEXITCODE -ne 0) {
-    Stop-Publication "La validación previa falló; la tarea existente no fue modificada."
+    Stop-Publication "La validacion previa fallo; la tarea existente no fue modificada."
 }
 
-$password = Read-Host "Contraseña de $ServiceAccount (no se guardará en archivos ni logs)" -AsSecureString
+$password = Read-Host "Contrasena de $ServiceAccount (no se guardara en archivos ni logs)" -AsSecureString
 $passwordPointer = [IntPtr]::Zero
 $plainPassword = $null
 $temporaryTaskName = "$TaskName - validacion-$([Guid]::NewGuid().ToString('N').Substring(0, 8))"
@@ -107,7 +107,7 @@ try {
         -RestartCount 3 `
         -RestartInterval (New-TimeSpan -Minutes 2)
 
-    Write-Host "Comprobando cuenta, contraseña y definición en una tarea temporal..."
+    Write-Host "Comprobando cuenta, contrasena y definicion en una tarea temporal..."
     Register-ScheduledTask `
         -TaskName $temporaryTaskName `
         -Action $action `
@@ -143,7 +143,7 @@ finally {
 }
 
 Initialize-PortalDirectories -Configuration $config
-$portSource = if ($portWasExplicit) { "parámetro" } else { ".env" }
+$portSource = if ($portWasExplicit) { "parametro" } else { ".env" }
 $publication = [ordered]@{
     task_name = $TaskName
     service_account = $ServiceAccount
@@ -152,21 +152,21 @@ $publication = [ordered]@{
     port_source = $portSource
     script = Join-Path $PSScriptRoot "portal.ps1"
     published_at = [DateTimeOffset]::Now.ToString("o")
-    note = "No contiene contraseñas. El Firewall de Windows no fue modificado."
+    note = "No contiene contrasenas. El Firewall de Windows no fue modificado."
 }
 $publication | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $config.RuntimeDirectory "publication.json") -Encoding UTF8
 
 Write-Host "Tarea registrada para el arranque de Windows." -ForegroundColor Green
 Write-Host "Cuenta: $ServiceAccount"
-Write-Host "URL pública declarada: $($PublicUrl.AbsoluteUri.TrimEnd('/'))"
+Write-Host "URL publica declarada: $($PublicUrl.AbsoluteUri.TrimEnd('/'))"
 Write-Host "Puerto efectivo: $($config.Port)"
-Write-Host "El script no abrió puertos ni modificó el Firewall de Windows." -ForegroundColor Yellow
+Write-Host "El script no abrio puertos ni modifico el Firewall de Windows." -ForegroundColor Yellow
 
 if ((Get-PortalProcessState -Configuration $config).State -eq "Running") {
     Write-Host "Reiniciando el proceso administrado para verificar realmente la cuenta de servicio..."
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $portalManager stop -Port $config.Port
     if ($LASTEXITCODE -ne 0) {
-        Stop-Publication "No se pudo detener de forma segura el proceso anterior. La tarea quedó registrada pero no se inició."
+        Stop-Publication "No se pudo detener de forma segura el proceso anterior. La tarea quedo registrada pero no se inicio."
     }
 }
 
@@ -194,11 +194,11 @@ for ($attempt = 0; $attempt -lt 120; $attempt++) {
 
 if (-not $available) {
     $taskInfo = Get-ScheduledTaskInfo -TaskName $TaskName -ErrorAction SilentlyContinue
-    Write-Host "ERROR: la tarea quedó registrada, pero el portal no respondió localmente." -ForegroundColor Red
+    Write-Host "ERROR: la tarea quedo registrada, pero el portal no respondio localmente." -ForegroundColor Red
     if ($null -ne $taskInfo) { Write-Host "Resultado de la tarea: $($taskInfo.LastTaskResult)" }
     Write-Host "Revise: .\scripts\portal.cmd logs" -ForegroundColor Yellow
     exit 1
 }
 
-Write-Host "Portal disponible localmente y preparado para el próximo arranque de Windows." -ForegroundColor Green
+Write-Host "Portal disponible localmente y preparado para el proximo arranque de Windows." -ForegroundColor Green
 Write-Host "Acceso declarado: $($PublicUrl.AbsoluteUri.TrimEnd('/'))"

@@ -10,7 +10,7 @@ try {
     $config = Get-PortalConfiguration -Port $Port
 }
 catch {
-    Write-Host "[ERROR] configuración: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "[ERROR] configuracion: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 
@@ -22,19 +22,19 @@ function Write-StepError {
 }
 
 Write-Host "Validando portal en $($config.Root)"
-Write-Host "Puerto efectivo: $($config.Port) (se toma del parámetro o del .env)."
+Write-Host "Puerto efectivo: $($config.Port) (se toma del parametro o del .env)."
 
 if (-not (Test-Path -LiteralPath $config.EnvironmentPath -PathType Leaf)) {
-    Write-StepError -Name "configuración" -Detail "Falta el archivo .env."
+    Write-StepError -Name "configuracion" -Detail "Falta el archivo .env."
 }
 if (-not (Test-Path -LiteralPath $config.Python -PathType Leaf)) {
     Write-StepError -Name "python" -Detail "Falta .venv\Scripts\python.exe. Ejecute scripts\setup_windows.ps1."
 }
 if (-not (Test-Path -LiteralPath $config.EntryPoint -PathType Leaf)) {
-    Write-StepError -Name "código" -Detail "Falta run.py."
+    Write-StepError -Name "codigo" -Detail "Falta run.py."
 }
 if ($errors -gt 0) {
-    Write-Host "Validación rechazada: $errors error(es) bloqueante(s)." -ForegroundColor Red
+    Write-Host "Validacion rechazada: $errors error(es) bloqueante(s)." -ForegroundColor Red
     exit 1
 }
 
@@ -56,7 +56,7 @@ else {
 if ($errors -eq 0) {
     & $config.Python $config.ManagePy check
     if ($LASTEXITCODE -ne 0) {
-        Write-StepError -Name "django" -Detail "manage.py check encontró errores."
+        Write-StepError -Name "django" -Detail "manage.py check encontro errores."
     }
     else {
         Write-Host "[OK] django: comprobaciones internas aprobadas." -ForegroundColor Green
@@ -66,7 +66,7 @@ if ($errors -eq 0) {
 if ($errors -eq 0) {
     & $config.Python $config.ManagePy makemigrations --check --dry-run
     if ($LASTEXITCODE -ne 0) {
-        Write-StepError -Name "migraciones" -Detail "Se detectaron cambios de modelos que exigirían una migración no aprobada."
+        Write-StepError -Name "migraciones" -Detail "Se detectaron cambios de modelos que exigirian una migracion no aprobada."
     }
     else {
         Write-Host "[OK] migraciones: no hay migraciones pendientes generadas por el portal." -ForegroundColor Green
@@ -78,24 +78,24 @@ if ($errors -eq 0) {
     if ($SkipPortCheck) { $productionArguments += "--sin-comprobar-puerto" }
     & $config.Python @productionArguments
     if ($LASTEXITCODE -ne 0) {
-        Write-StepError -Name "producción" -Detail "La conexión, el esquema o el entorno no están listos."
+        Write-StepError -Name "produccion" -Detail "La conexion, el esquema o el entorno no estan listos."
     }
 }
 
 if ($errors -eq 0) {
     & $config.Python $config.ManagePy collectstatic --noinput --verbosity 0
     if ($LASTEXITCODE -ne 0) {
-        Write-StepError -Name "estáticos" -Detail "collectstatic no pudo escribir en STATIC_ROOT."
+        Write-StepError -Name "estaticos" -Detail "collectstatic no pudo escribir en STATIC_ROOT."
     }
     else {
-        Write-Host "[OK] estáticos: archivos preparados en la salida exclusiva." -ForegroundColor Green
+        Write-Host "[OK] estaticos: archivos preparados en la salida exclusiva." -ForegroundColor Green
     }
 }
 
 if ($errors -gt 0) {
-    Write-Host "Validación rechazada: $errors error(es) bloqueante(s). Las advertencias no se cuentan como errores." -ForegroundColor Red
+    Write-Host "Validacion rechazada: $errors error(es) bloqueante(s). Las advertencias no se cuentan como errores." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Validación aprobada. Revise las ADVERTENCIAS antes de publicar." -ForegroundColor Green
+Write-Host "Validacion aprobada. Revise las ADVERTENCIAS antes de publicar." -ForegroundColor Green
 exit 0

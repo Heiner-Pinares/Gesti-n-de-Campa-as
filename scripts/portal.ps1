@@ -15,7 +15,7 @@ try {
     Initialize-PortalDirectories -Configuration $config
 }
 catch {
-    Write-Host "ERROR DE CONFIGURACIÓN: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "ERROR DE CONFIGURACION: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 
@@ -33,7 +33,7 @@ function Show-PortalLogs {
             Select-Object -First 2 -ExpandProperty FullName)
     }
     if ($files.Count -eq 0) {
-        Write-Host "Todavía no existen logs del portal."
+        Write-Host "Todavia no existen logs del portal."
         return
     }
     foreach ($file in $files) {
@@ -52,17 +52,17 @@ function Stop-ManagedPortal {
     if ($state.State -eq "Stale") {
         Write-Host "PID obsoleto detectado: $($state.Detail)" -ForegroundColor Yellow
         Clear-PortalRuntimeState -Configuration $config
-        Write-Host "El estado obsoleto fue limpiado; no se terminó ningún proceso."
+        Write-Host "El estado obsoleto fue limpiado; no se termino ningun proceso."
         return $true
     }
     if ($state.State -eq "Foreign") {
         Write-Host "SEGURIDAD: $($state.Detail) PID=$($state.ProcessId)." -ForegroundColor Red
         Clear-PortalRuntimeState -Configuration $config
-        Write-Host "Solo se limpió el PID obsoleto. El otro proceso sigue intacto." -ForegroundColor Yellow
+        Write-Host "Solo se limpio el PID obsoleto. El otro proceso sigue intacto." -ForegroundColor Yellow
         return $false
     }
 
-    Write-Host "Deteniendo únicamente el proceso verificado del portal (PID $($state.ProcessId))..."
+    Write-Host "Deteniendo unicamente el proceso verificado del portal (PID $($state.ProcessId))..."
     Stop-Process -Id $state.ProcessId -ErrorAction Stop
     try {
         Wait-Process -Id $state.ProcessId -Timeout 20 -ErrorAction Stop
@@ -75,10 +75,10 @@ function Stop-ManagedPortal {
             return $true
         }
         if ($current.State -ne "Running" -or $current.ProcessId -ne $state.ProcessId) {
-            Write-Host "No se aplicará terminación forzada porque la identidad del proceso cambió." -ForegroundColor Red
+            Write-Host "No se aplicara terminacion forzada porque la identidad del proceso cambio." -ForegroundColor Red
             return $false
         }
-        Write-Host "El proceso no cerró a tiempo; se terminará el mismo PID previamente verificado." -ForegroundColor Yellow
+        Write-Host "El proceso no cerro a tiempo; se terminara el mismo PID previamente verificado." -ForegroundColor Yellow
         Stop-Process -Id $state.ProcessId -Force -ErrorAction Stop
         Wait-Process -Id $state.ProcessId -Timeout 10 -ErrorAction SilentlyContinue
     }
@@ -90,7 +90,7 @@ function Stop-ManagedPortal {
 function Start-ManagedPortal {
     $state = Get-PortalProcessState -Configuration $config
     if ($state.State -eq "Running") {
-        Write-Host "El portal ya está activo: PID $($state.ProcessId), $($config.LocalUrl)." -ForegroundColor Green
+        Write-Host "El portal ya esta activo: PID $($state.ProcessId), $($config.LocalUrl)." -ForegroundColor Green
         return $true
     }
     if ($state.State -eq "Stale" -or $state.State -eq "Foreign") {
@@ -102,7 +102,7 @@ function Start-ManagedPortal {
     }
 
     if (-not (Test-PortalPortAvailable -Port $config.Port)) {
-        Write-Host "ERROR: el puerto $($config.Port) está ocupado. No se detendrá el proceso que lo utiliza." -ForegroundColor Red
+        Write-Host "ERROR: el puerto $($config.Port) esta ocupado. No se detendra el proceso que lo utiliza." -ForegroundColor Red
         return $false
     }
 
@@ -113,14 +113,14 @@ function Start-ManagedPortal {
     $env:PYTHONIOENCODING = "utf-8"
     $env:AUTO_MIGRATE = "false"
 
-    Write-Host "Ejecutando validación previa (sin migraciones ni autenticación real contra AD)..."
+    Write-Host "Ejecutando validacion previa (sin migraciones ni autenticacion real contra AD)..."
     $validationExitCode = Invoke-PortalValidationProcess -Configuration $config
     if ($validationExitCode -ne 0) {
-        Write-Host "ERROR: el portal no se inició porque la validación previa falló." -ForegroundColor Red
+        Write-Host "ERROR: el portal no se inicio porque la validacion previa fallo." -ForegroundColor Red
         return $false
     }
     if (-not (Test-PortalPortAvailable -Port $config.Port)) {
-        Write-Host "ERROR: el puerto $($config.Port) fue ocupado durante la validación." -ForegroundColor Red
+        Write-Host "ERROR: el puerto $($config.Port) fue ocupado durante la validacion." -ForegroundColor Red
         return $false
     }
 
@@ -155,7 +155,7 @@ function Start-ManagedPortal {
     }
 
     if (-not $ready) {
-        Write-Host "ERROR: el portal no respondió por HTTP dentro del tiempo esperado." -ForegroundColor Red
+        Write-Host "ERROR: el portal no respondio por HTTP dentro del tiempo esperado." -ForegroundColor Red
         Show-PortalLogs -Lines 80
         $failedState = Get-PortalProcessState -Configuration $config
         if ($failedState.State -eq "Running" -and $failedState.ProcessId -eq $process.Id) {
@@ -166,7 +166,7 @@ function Start-ManagedPortal {
     }
 
     Write-Host "Portal activo en $($config.LocalUrl) (PID $($process.Id))." -ForegroundColor Green
-    Write-Host "Puerto efectivo: $($config.Port). Origen: parámetro explícito o .env."
+    Write-Host "Puerto efectivo: $($config.Port). Origen: parametro explicito o .env."
     Write-Host "Logs: $($config.LogDirectory)"
     return $true
 }

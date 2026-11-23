@@ -57,7 +57,7 @@ function Get-PortalConfiguration {
     $configuredPort = Get-FirstConfiguredValue -Values $values -Names @("PORTAL_PORT", "PORT", "WEB_PORT") -Default "8000"
     $resolvedPort = if ($Port -gt 0) { $Port } else { 0 }
     if ($resolvedPort -eq 0 -and -not [int]::TryParse($configuredPort, [ref]$resolvedPort)) {
-        throw "El puerto configurado en .env no es un número válido."
+        throw "El puerto configurado en .env no es un numero valido."
     }
     if ($resolvedPort -lt 1 -or $resolvedPort -gt 65535) {
         throw "El puerto debe estar entre 1 y 65535."
@@ -107,7 +107,7 @@ function Get-PortalProcessState {
     $pidText = (Get-Content -LiteralPath $Configuration.PidFile -Raw -Encoding UTF8).Trim()
     $processId = 0
     if (-not [int]::TryParse($pidText, [ref]$processId) -or $processId -le 0) {
-        return [PSCustomObject]@{ State = "Stale"; ProcessId = $null; Process = $null; Detail = "El archivo PID no es válido." }
+        return [PSCustomObject]@{ State = "Stale"; ProcessId = $null; Process = $null; Detail = "El archivo PID no es valido." }
     }
 
     $process = Get-CimInstance Win32_Process -Filter "ProcessId = $processId" -ErrorAction SilentlyContinue
@@ -125,7 +125,7 @@ function Get-PortalProcessState {
             State = "Foreign"
             ProcessId = $processId
             Process = $process
-            Detail = "El PID pertenece a otro ejecutable o a otra línea de comandos; no se tocará ese proceso."
+            Detail = "El PID pertenece a otro ejecutable o a otra linea de comandos; no se tocara ese proceso."
         }
     }
 
