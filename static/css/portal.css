@@ -56,6 +56,7 @@ svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width:
 .user-copy { display: grid; line-height: 1.3; }
 .user-copy strong { font-size: 12px; }
 .user-copy small { color: var(--muted); font-size: 10px; }
+.user-copy .user-role { color: #8793a5; font-size: 9px; }
 .icon-button { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid var(--line); border-radius: 10px; color: #6c798d; background: #fff; cursor: pointer; transition: .18s ease; }
 .icon-button:hover { color: var(--red); border-color: #f0b8bd; background: #fff6f7; }
 

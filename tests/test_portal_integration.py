@@ -90,8 +90,12 @@ def test_authenticated_portal_pages_render_with_real_portal_tables(client, porta
     )
 
     with patch("portal.views.list_effective_campaigns", return_value=[]):
-        assert client.get(reverse("inicio")).status_code == 200
+        home_response = client.get(reverse("inicio"))
+        assert home_response.status_code == 200
         assert client.get(reverse("campanas")).status_code == 200
+    home_html = home_response.content.decode()
+    assert "Puesto no informado" in home_html
+    assert "Rol: Administrador" in home_html
     validation_response = client.get(
         reverse("validaciones"),
         {"ejecucion": execution.pk, "resultado": "CORRECTO"},

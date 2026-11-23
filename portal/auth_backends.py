@@ -22,6 +22,7 @@ class PortalUserBackend(BaseBackend):
         "username",
         "nombre_completo",
         "email",
+        "puesto",
         "password",
         "rol",
         "is_active",
@@ -78,6 +79,7 @@ class ClaroActiveDirectoryBackend(PortalUserBackend):
                     username=code,
                     nombre_completo=identity.full_name[:150],
                     email=(identity.email or None),
+                    puesto=(identity.job_title[:200] or None),
                     rol=user_model.ROLE_ANALYST,
                     is_active=True,
                 )
@@ -92,11 +94,13 @@ class ClaroActiveDirectoryBackend(PortalUserBackend):
 
             user.nombre_completo = identity.full_name[:150]
             user.email = identity.email or None
+            user.puesto = identity.job_title[:200] or None
             user.set_unusable_password()
             user.save(
                 update_fields=(
                     "nombre_completo",
                     "email",
+                    "puesto",
                     "password",
                     "fecha_modificacion",
                 )

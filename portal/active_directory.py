@@ -44,6 +44,7 @@ class DirectoryIdentity:
     surname: str = ""
     email: str = ""
     display_name: str = ""
+    job_title: str = ""
 
     @property
     def full_name(self):
@@ -175,6 +176,7 @@ def authenticate_against_directory(code, password):
                 "sn",
                 "mail",
                 "displayName",
+                "title",
                 "userAccountControl",
             ),
             size_limit=1,
@@ -201,6 +203,7 @@ def authenticate_against_directory(code, password):
             surname=_first(attributes, "sn"),
             email=_first(attributes, "mail"),
             display_name=_first(attributes, "displayName"),
+            job_title=_first(attributes, "title"),
         )
     except (DirectoryUnavailable, DirectoryDependencyError):
         raise

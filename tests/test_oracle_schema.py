@@ -1,4 +1,5 @@
 from portal.oracle_schema import EXPECTED_TABLES, load_schema_objects
+from portal.management.commands.agregar_puesto_usuario_gc import ADD_COLUMN_SQL
 from portal.management.commands.reparar_fechas_gc import (
     INDEXES_BY_COLUMN,
     existing_column_definition,
@@ -32,6 +33,25 @@ def test_schema_timestamps_are_compatible_with_oracle_thin():
     assert "TIMESTAMP(6) WITH TIME ZONE" not in table_ddl
     assert "DEFAULT SYSTIMESTAMP" not in table_ddl
     assert "TIMESTAMP(6) DEFAULT LOCALTIMESTAMP" in table_ddl
+
+
+def test_user_schema_keeps_position_separate_from_portal_role():
+    objects = load_schema_objects()
+    user_ddl = next(
+        item.ddl.upper()
+        for item in objects
+        if item.object_type == "TABLE" and item.name == "TBL_USUARIO_GC"
+    )
+
+    assert "PUESTO VARCHAR2(200 CHAR)" in user_ddl
+    assert "ROL VARCHAR2(20 CHAR)" in user_ddl
+    assert ADD_COLUMN_SQL == (
+        "ALTER TABLE TBL_USUARIO_GC ADD (PUESTO VARCHAR2(200 CHAR))"
+    )
+    assert not any(
+        keyword in ADD_COLUMN_SQL.upper()
+        for keyword in ("DROP ", "TRUNCATE ", "DELETE ", "UPDATE ")
+    )
 
 
 def test_existing_timestamp_repair_does_not_repeat_not_null():

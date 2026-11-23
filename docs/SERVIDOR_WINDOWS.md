@@ -227,15 +227,17 @@ El modo plano queda habilitado por compatibilidad y muestra una advertencia; se
 recomienda coordinar con TI la migración a StartTLS o LDAPS.
 
 Después de una autenticación corporativa correcta, el portal busca
-`sAMAccountName`, rechaza cuentas AD deshabilitadas y sincroniza nombre completo y
-correo en `TBL_USUARIO_GC`. Conserva `ROL` y `ACTIVO`; a una cuenta nueva le asigna
-`ANALISTA`, el rol de menor privilegio disponible. La columna `CLAVE_HASH` recibe
-una marca de contraseña inutilizable de Django: nunca se almacena la contraseña AD
-ni un hash de ella.
+`sAMAccountName`, rechaza cuentas AD deshabilitadas y sincroniza nombre completo,
+correo y puesto laboral en `TBL_USUARIO_GC`. El puesto proviene del atributo AD
+`title` y se guarda en `PUESTO`; es informativo y no concede permisos. `ROL` sigue
+siendo un dato independiente. El portal conserva `ROL` y `ACTIVO`; a una cuenta
+nueva le asigna `ANALISTA`, el rol de menor privilegio disponible. La columna
+`CLAVE_HASH` recibe una marca de contraseña inutilizable de Django: nunca se
+almacena la contraseña AD ni un hash de ella.
 
 El modelo actual no posee tablas ni columnas separadas para área, gerencia,
-dirección, jefe o perfil. La integración no crea esas tablas y no modifica ninguna
-información organizacional externa. Tampoco existe una pantalla de administración
+dirección, jefe o perfil. La integración solo agrega `PUESTO` y no modifica otra
+información organizacional. Tampoco existe una pantalla de administración
 de usuarios o de cambio de contraseña. El comando `crear_usuario_portal` se conserva
 solo para cuentas locales y rechaza códigos C/E y correos Claro. La contraseña de
 una cuenta corporativa se administra mediante el procedimiento de Windows/Dominio
@@ -256,6 +258,7 @@ Después de actualizar el repositorio, ejecute exactamente:
 ```powershell
 git pull
 .\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+.\scripts\add_user_position_gc.ps1
 .\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe manage.py collectstatic --noinput
@@ -267,9 +270,10 @@ Detenga el proceso anterior con `Ctrl+C` en su consola y reinicie:
 .\.venv\Scripts\python.exe run.py
 ```
 
-No ejecute `manage.py migrate`, `instalar_esquema_gc` ni ningún DDL para esta
-actualización: la autenticación AD no agrega tablas, columnas, índices ni
-restricciones.
+No ejecute `manage.py migrate` ni recree el esquema. El script
+`add_user_position_gc.ps1` agrega exclusivamente la columna nullable
+`TBL_USUARIO_GC.PUESTO`; es idempotente, conserva todos los usuarios y puede
+volverse a ejecutar sin duplicar el cambio.
 
 Si desea cambiar el límite de carga del Consolidado, configure `COMMERCIAL_WORKBOOK_MAX_MB` en `.env` (25 MB por defecto) y reinicie el portal.
 

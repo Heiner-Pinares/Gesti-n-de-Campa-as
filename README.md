@@ -46,6 +46,8 @@ Documentación principal:
 
 Las cuentas `C`/`E` se crean o sincronizan automáticamente después de validar su
 contraseña con Dominio Claro. La contraseña de dominio no se almacena en Oracle.
+El atributo AD `title` se sincroniza como puesto laboral, separado del rol de
+permisos del portal.
 La configuración y los pasos de actualización están en
 `docs/SERVIDOR_WINDOWS.md`, sección **Active Directory de Claro**.
 

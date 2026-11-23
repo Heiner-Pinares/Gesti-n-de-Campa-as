@@ -13,6 +13,25 @@ BASE_DIR = Path(__file__).resolve().parent
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
+class PortalSchemaError(RuntimeError):
+    """El esquema Oracle no contiene una ampliación requerida por el código."""
+
+
+def comprobar_columna_puesto(cursor):
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'TBL_USUARIO_GC' AND COLUMN_NAME = 'PUESTO'
+        """
+    )
+    if cursor.fetchone()[0] != 1:
+        raise PortalSchemaError(
+            "Falta TBL_USUARIO_GC.PUESTO. Ejecute "
+            ".\\scripts\\add_user_position_gc.ps1 antes de iniciar el portal."
+        )
+
+
 def obtener_ip_local():
     """Detecta una IPv4 de red sin convertir la detección en requisito de arranque."""
     detected = None
@@ -63,6 +82,8 @@ def comprobar_base_datos():
 
     if connection.vendor == "oracle":
         call_command("verificar_oracle", verbosity=0)
+        with connection.cursor() as cursor:
+            comprobar_columna_puesto(cursor)
         return
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1")
@@ -126,6 +147,9 @@ def main():
     print("Comprobando conexión a la base de datos...", flush=True)
     try:
         comprobar_base_datos()
+    except PortalSchemaError as error:
+        print(f"ERROR DE ESQUEMA: {error}", flush=True)
+        return 1
     except Exception:
         print(
             "ERROR: no se pudo comprobar la base de datos. Revise red, servicio, permisos y configuración.",

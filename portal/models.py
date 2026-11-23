@@ -30,6 +30,7 @@ class PortalUser(AbstractBaseUser):
     username = models.CharField(max_length=80, unique=True, db_column="USUARIO")
     nombre_completo = models.CharField(max_length=150, db_column="NOMBRE_COMPLETO")
     email = models.EmailField(max_length=254, blank=True, null=True, db_column="EMAIL")
+    puesto = models.CharField(max_length=200, blank=True, null=True, db_column="PUESTO")
     password = models.CharField(max_length=128, db_column="CLAVE_HASH")
     rol = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_ANALYST, db_column="ROL")
     is_active = models.BooleanField(default=True, db_column="ACTIVO")

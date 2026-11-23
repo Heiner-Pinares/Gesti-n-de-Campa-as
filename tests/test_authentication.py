@@ -26,6 +26,7 @@ IDENTITY = DirectoryIdentity(
     surname="Pinares",
     email="heiner.pinares@claro.com.pe",
     display_name="Heiner Pinares",
+    job_title="Analista de Facturación",
 )
 
 
@@ -63,6 +64,7 @@ def test_valid_corporate_code_creates_minimum_privilege_user(client, user_table)
     user = PortalUser.objects.get(username="C27826")
     assert user.nombre_completo == "Heiner Pinares"
     assert user.email == "heiner.pinares@claro.com.pe"
+    assert user.puesto == "Analista de Facturación"
     assert user.rol == PortalUser.ROLE_ANALYST
     assert user.is_active
     assert not user.has_usable_password()
@@ -92,6 +94,7 @@ def test_existing_corporate_user_preserves_role_and_syncs_profile(client, user_t
     assert user.rol == PortalUser.ROLE_ADMIN
     assert user.nombre_completo == "Heiner Pinares"
     assert user.email == "heiner.pinares@claro.com.pe"
+    assert user.puesto == "Analista de Facturación"
     assert not user.has_usable_password()
 
 
@@ -277,6 +280,7 @@ def test_mocked_ldap_validator_uses_ntlm_search_and_always_unbinds():
             "sn": ["Pinares"],
             "mail": ["heiner.pinares@claro.com.pe"],
             "displayName": ["Heiner Pinares"],
+            "title": ["Analista de Facturación"],
             "userAccountControl": ["512"],
         }
     )
@@ -323,6 +327,7 @@ def test_mocked_ldap_validator_uses_ntlm_search_and_always_unbinds():
             "sn",
             "mail",
             "displayName",
+            "title",
             "userAccountControl",
         ),
         size_limit=1,

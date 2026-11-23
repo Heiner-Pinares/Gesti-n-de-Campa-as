@@ -41,3 +41,27 @@ def test_local_ip_falls_back_to_hostname_addresses(monkeypatch):
     )
 
     assert run.obtener_ip_local() == "172.19.194.219"
+
+
+def test_position_column_is_required_before_startup():
+    class MissingColumnCursor:
+        def execute(self, statement):
+            assert "TBL_USUARIO_GC" in statement
+            assert "PUESTO" in statement
+
+        def fetchone(self):
+            return (0,)
+
+    with pytest.raises(run.PortalSchemaError, match="add_user_position_gc.ps1"):
+        run.comprobar_columna_puesto(MissingColumnCursor())
+
+
+def test_position_column_allows_startup():
+    class CompatibleCursor:
+        def execute(self, statement):
+            pass
+
+        def fetchone(self):
+            return (1,)
+
+    run.comprobar_columna_puesto(CompatibleCursor())
