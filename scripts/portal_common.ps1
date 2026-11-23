@@ -187,9 +187,36 @@ function Invoke-PortalValidationProcess {
         [switch]$SkipPortCheck
     )
     $validator = Join-Path $PSScriptRoot "validar_portal_windows.ps1"
-    $arguments = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $validator, "-Port", [string]$Configuration.Port)
+    $quotedValidator = '"' + $validator + '"'
+    $arguments = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $quotedValidator, "-Port", [string]$Configuration.Port)
     if ($SkipPortCheck) { $arguments += "-SkipPortCheck" }
-    & powershell.exe @arguments 2>&1 | ForEach-Object { Write-Host $_ }
-    $exitCode = $LASTEXITCODE
-    return [int]$exitCode
+
+    Initialize-PortalDirectories -Configuration $Configuration
+    $validationId = [Guid]::NewGuid().ToString("N")
+    $standardOutput = Join-Path $Configuration.RuntimeDirectory "validation-$validationId.out.log"
+    $errorOutput = Join-Path $Configuration.RuntimeDirectory "validation-$validationId.error.log"
+    try {
+        $process = Start-Process -FilePath "powershell.exe" `
+            -ArgumentList $arguments `
+            -WorkingDirectory $Configuration.Root `
+            -RedirectStandardOutput $standardOutput `
+            -RedirectStandardError $errorOutput `
+            -WindowStyle Hidden `
+            -Wait `
+            -PassThru
+
+        if (Test-Path -LiteralPath $standardOutput -PathType Leaf) {
+            Get-Content -LiteralPath $standardOutput -Encoding UTF8 |
+                ForEach-Object { Write-Host $_ }
+        }
+        if (Test-Path -LiteralPath $errorOutput -PathType Leaf) {
+            Get-Content -LiteralPath $errorOutput -Encoding UTF8 |
+                ForEach-Object { Write-Host $_ -ForegroundColor Red }
+        }
+        return [int]$process.ExitCode
+    }
+    finally {
+        Remove-Item -LiteralPath $standardOutput -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $errorOutput -Force -ErrorAction SilentlyContinue
+    }
 }

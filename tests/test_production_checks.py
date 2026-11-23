@@ -114,6 +114,9 @@ def test_windows_manager_exposes_required_commands_and_safe_stop_contract():
     assert "Get-CimInstance Win32_Process" in common
     assert "ExecutablePath" in common
     assert "CommandLine" in common
+    assert "RedirectStandardOutput" in common
+    assert "RedirectStandardError" in common
+    assert "& powershell.exe @arguments 2>&1" not in common
     assert "Stop-Process -Name" not in manager
     assert "taskkill" not in manager.lower()
     assert "Invoke-WebRequest" in manager
