@@ -19,8 +19,8 @@ class Command(BaseCommand):
         parser.add_argument("--email", default="")
         parser.add_argument(
             "--rol",
-            choices=("ADMINISTRADOR", "ANALISTA"),
-            default="ANALISTA",
+            choices=("ADMINISTRADOR", "USUARIO"),
+            default="USUARIO",
         )
 
     def handle(self, *args, **options):

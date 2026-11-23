@@ -96,7 +96,7 @@ Ajustes obligatorios para este portal:
 | Construcción del DSN y lectura del secreto | Adaptar | Pool desactivado y conexión directa inicial |
 | Generación de `SECRET_KEY` | Reutilizar | Archivo fuera de Git |
 | Login, sesión y CSRF | Adaptar | Branding y rutas propias |
-| Roles y permisos | Adaptar | Solo Administrador y Analista inicialmente |
+| Roles y permisos | Adaptar | Solo Administrador y Usuario inicialmente |
 | Servicios transaccionales | Reutilizar el patrón | Dominio campañas/validaciones |
 | Selectores/repositorios | Reutilizar el patrón | Repositorios Oracle explícitos de lectura |
 | pytest + SQLite en memoria | Reutilizar | Fixtures anonimizados |

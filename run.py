@@ -32,6 +32,43 @@ def comprobar_columna_puesto(cursor):
         )
 
 
+def comprobar_rol_usuario(cursor):
+    cursor.execute(
+        """
+        SELECT DATA_DEFAULT
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'TBL_USUARIO_GC' AND COLUMN_NAME = 'ROL'
+        """
+    )
+    row = cursor.fetchone()
+    default = str(row[0]).upper() if row and row[0] else ""
+    cursor.execute(
+        "SELECT COUNT(*) FROM TBL_USUARIO_GC WHERE ROL = 'ANALISTA'"
+    )
+    legacy_rows = cursor.fetchone()[0]
+    cursor.execute(
+        """
+        SELECT SEARCH_CONDITION
+        FROM USER_CONSTRAINTS
+        WHERE TABLE_NAME = 'TBL_USUARIO_GC'
+          AND CONSTRAINT_NAME = 'CK_USU_ROL_GC'
+          AND CONSTRAINT_TYPE = 'C'
+        """
+    )
+    row = cursor.fetchone()
+    condition = str(row[0]).upper() if row and row[0] else ""
+    if (
+        "'USUARIO'" not in default
+        or legacy_rows
+        or "'USUARIO'" not in condition
+        or "'ANALISTA'" in condition
+    ):
+        raise PortalSchemaError(
+            "El rol básico aún es ANALISTA. Ejecute "
+            ".\\scripts\\update_user_schema_gc.ps1 antes de iniciar el portal."
+        )
+
+
 def obtener_ip_local():
     """Detecta una IPv4 de red sin convertir la detección en requisito de arranque."""
     detected = None
@@ -84,6 +121,7 @@ def comprobar_base_datos():
         call_command("verificar_oracle", verbosity=0)
         with connection.cursor() as cursor:
             comprobar_columna_puesto(cursor)
+            comprobar_rol_usuario(cursor)
         return
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1")

@@ -231,7 +231,7 @@ Después de una autenticación corporativa correcta, el portal busca
 correo y puesto laboral en `TBL_USUARIO_GC`. El puesto proviene del atributo AD
 `title` y se guarda en `PUESTO`; es informativo y no concede permisos. `ROL` sigue
 siendo un dato independiente. El portal conserva `ROL` y `ACTIVO`; a una cuenta
-nueva le asigna `ANALISTA`, el rol de menor privilegio disponible. La columna
+nueva le asigna `USUARIO`, el rol de menor privilegio disponible. La columna
 `CLAVE_HASH` recibe una marca de contraseña inutilizable de Django: nunca se
 almacena la contraseña AD ni un hash de ella.
 
@@ -258,7 +258,7 @@ Después de actualizar el repositorio, ejecute exactamente:
 ```powershell
 git pull
 .\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
-.\scripts\add_user_position_gc.ps1
+.\scripts\update_user_schema_gc.ps1
 .\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe manage.py collectstatic --noinput
@@ -271,9 +271,10 @@ Detenga el proceso anterior con `Ctrl+C` en su consola y reinicie:
 ```
 
 No ejecute `manage.py migrate` ni recree el esquema. El script
-`add_user_position_gc.ps1` agrega exclusivamente la columna nullable
-`TBL_USUARIO_GC.PUESTO`; es idempotente, conserva todos los usuarios y puede
-volverse a ejecutar sin duplicar el cambio.
+`update_user_schema_gc.ps1` agrega la columna nullable `TBL_USUARIO_GC.PUESTO` y
+renombra el rol básico `ANALISTA` a `USUARIO`. Conserva los administradores,
+puestos, usuarios y permisos existentes. Es idempotente y puede volver a
+ejecutarse sin duplicar los cambios.
 
 Si desea cambiar el límite de carga del Consolidado, configure `COMMERCIAL_WORKBOOK_MAX_MB` en `.env` (25 MB por defecto) y reinicie el portal.
 

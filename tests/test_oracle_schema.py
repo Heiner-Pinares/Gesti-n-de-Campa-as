@@ -45,6 +45,9 @@ def test_user_schema_keeps_position_separate_from_portal_role():
 
     assert "PUESTO VARCHAR2(200 CHAR)" in user_ddl
     assert "ROL VARCHAR2(20 CHAR)" in user_ddl
+    assert "DEFAULT 'USUARIO'" in user_ddl
+    assert "ROL IN ('ADMINISTRADOR', 'USUARIO')" in user_ddl
+    assert "DEFAULT 'ANALISTA'" not in user_ddl
     assert ADD_COLUMN_SQL == (
         "ALTER TABLE TBL_USUARIO_GC ADD (PUESTO VARCHAR2(200 CHAR))"
     )

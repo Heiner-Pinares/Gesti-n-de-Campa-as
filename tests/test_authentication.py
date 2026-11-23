@@ -65,7 +65,7 @@ def test_valid_corporate_code_creates_minimum_privilege_user(client, user_table)
     assert user.nombre_completo == "Heiner Pinares"
     assert user.email == "heiner.pinares@claro.com.pe"
     assert user.puesto == "Analista de Facturación"
-    assert user.rol == PortalUser.ROLE_ANALYST
+    assert user.rol == PortalUser.ROLE_USER
     assert user.is_active
     assert not user.has_usable_password()
     assert "solo-en-memoria" not in user.password
@@ -121,7 +121,7 @@ def test_local_non_corporate_user_still_authenticates(user_table):
         username="OPERADOR_LOCAL",
         password="clave-local-segura",
         nombre_completo="Operador local",
-        rol=PortalUser.ROLE_ANALYST,
+        rol=PortalUser.ROLE_USER,
     )
 
     user = authenticate(username="operador_local", password="clave-local-segura")
@@ -150,7 +150,7 @@ def test_known_nominal_corporate_email_maps_to_corporate_code(client, user_table
         password="clave-local-antigua",
         nombre_completo="Nombre anterior",
         email="heiner.pinares@claro.com.pe",
-        rol=PortalUser.ROLE_ANALYST,
+        rol=PortalUser.ROLE_USER,
     )
 
     with patch(
@@ -190,7 +190,7 @@ def test_inactive_portal_account_shows_controlled_message(client, user_table):
         username="C27826",
         password="clave-local-antigua",
         nombre_completo="Cuenta suspendida",
-        rol=PortalUser.ROLE_ANALYST,
+        rol=PortalUser.ROLE_USER,
         is_active=False,
     )
 
@@ -230,7 +230,7 @@ def test_local_inactive_account_uses_same_controlled_message(client, user_table)
         username="OPERADOR_LOCAL",
         password="clave-local-segura",
         nombre_completo="Operador suspendido",
-        rol=PortalUser.ROLE_ANALYST,
+        rol=PortalUser.ROLE_USER,
         is_active=False,
     )
 

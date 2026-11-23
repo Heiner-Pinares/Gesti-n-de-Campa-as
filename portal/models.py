@@ -23,8 +23,8 @@ class PortalUserManager(BaseUserManager):
 
 class PortalUser(AbstractBaseUser):
     ROLE_ADMIN = "ADMINISTRADOR"
-    ROLE_ANALYST = "ANALISTA"
-    ROLE_CHOICES = ((ROLE_ADMIN, "Administrador"), (ROLE_ANALYST, "Analista"))
+    ROLE_USER = "USUARIO"
+    ROLE_CHOICES = ((ROLE_ADMIN, "Administrador"), (ROLE_USER, "Usuario"))
 
     id_usuario = models.BigAutoField(primary_key=True, db_column="ID_USUARIO")
     username = models.CharField(max_length=80, unique=True, db_column="USUARIO")
@@ -32,7 +32,7 @@ class PortalUser(AbstractBaseUser):
     email = models.EmailField(max_length=254, blank=True, null=True, db_column="EMAIL")
     puesto = models.CharField(max_length=200, blank=True, null=True, db_column="PUESTO")
     password = models.CharField(max_length=128, db_column="CLAVE_HASH")
-    rol = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_ANALYST, db_column="ROL")
+    rol = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_USER, db_column="ROL")
     is_active = models.BooleanField(default=True, db_column="ACTIVO")
     last_login = models.DateTimeField(blank=True, null=True, db_column="ULTIMO_ACCESO")
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_column="FECHA_CREACION")

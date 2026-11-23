@@ -65,3 +65,34 @@ def test_position_column_allows_startup():
             return (1,)
 
     run.comprobar_columna_puesto(CompatibleCursor())
+
+
+def test_legacy_analyst_role_is_rejected_before_startup():
+    class LegacyRoleCursor:
+        def execute(self, statement):
+            self.statement = statement
+
+        def fetchone(self):
+            if "DATA_DEFAULT" in self.statement:
+                return ("'ANALISTA'",)
+            if "SEARCH_CONDITION" in self.statement:
+                return ("ROL IN ('ADMINISTRADOR', 'ANALISTA')",)
+            return (2,)
+
+    with pytest.raises(run.PortalSchemaError, match="update_user_schema_gc.ps1"):
+        run.comprobar_rol_usuario(LegacyRoleCursor())
+
+
+def test_user_role_allows_startup():
+    class CurrentRoleCursor:
+        def execute(self, statement):
+            self.statement = statement
+
+        def fetchone(self):
+            if "DATA_DEFAULT" in self.statement:
+                return ("'USUARIO'",)
+            if "SEARCH_CONDITION" in self.statement:
+                return ("ROL IN ('ADMINISTRADOR', 'USUARIO')",)
+            return (0,)
+
+    run.comprobar_rol_usuario(CurrentRoleCursor())

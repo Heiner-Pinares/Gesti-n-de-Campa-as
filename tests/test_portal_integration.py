@@ -109,12 +109,12 @@ def test_authenticated_portal_pages_render_with_real_portal_tables(client, porta
 
 
 @pytest.mark.django_db(transaction=True)
-def test_analyst_cannot_open_administration_actions(client, portal_tables):
+def test_user_cannot_open_administration_actions(client, portal_tables):
     user = PortalUser.objects.create_user(
-        username="ANALISTA",
+        username="USUARIO_LOCAL",
         password="prueba-segura",
-        nombre_completo="Analista de prueba",
-        rol=PortalUser.ROLE_ANALYST,
+        nombre_completo="Usuario de prueba",
+        rol=PortalUser.ROLE_USER,
     )
     client.force_login(user)
 

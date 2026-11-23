@@ -80,7 +80,7 @@ class ClaroActiveDirectoryBackend(PortalUserBackend):
                     nombre_completo=identity.full_name[:150],
                     email=(identity.email or None),
                     puesto=(identity.job_title[:200] or None),
-                    rol=user_model.ROLE_ANALYST,
+                    rol=user_model.ROLE_USER,
                     is_active=True,
                 )
                 user.set_unusable_password()
