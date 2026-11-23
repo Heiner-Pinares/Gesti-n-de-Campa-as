@@ -6,3 +6,5 @@ pytest>=8,<10
 pytest-django>=4.9,<5
 waitress>=3,<4
 whitenoise>=6.8,<7
+ldap3>=2.9,<3
+pycryptodome>=3.21,<4

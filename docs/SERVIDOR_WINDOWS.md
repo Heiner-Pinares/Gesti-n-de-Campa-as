@@ -193,11 +193,83 @@ Escuchar en `0.0.0.0` publica únicamente el portal web. Oracle continúa como s
 
 La autenticación, las campañas versionadas, las ejecuciones, los resultados y la auditoría utilizan las cinco tablas propias `TBL_*_GC`. El portal no requiere tablas estándar de Django ni ejecuta migraciones.
 
-Después de actualizar el código en un servidor ya instalado, vuelva a recopilar los archivos estáticos antes de reiniciar:
+### Active Directory de Claro
+
+El portal aplica este orden de autenticación:
+
+1. `ClaroActiveDirectoryBackend`: códigos `C`/`E` con cinco dígitos y cualquier
+   correo `@claro.com.pe`.
+2. `RestrictedPortalBackend`: solamente usuarios locales no corporativos.
+
+Las cuentas corporativas se validan mediante LDAP/NTLM con la identidad
+`CLARO\CODIGO`. Un correo como `C27826@claro.com.pe` se convierte directamente en
+el código. Un correo nominal solo funciona cuando `TBL_USUARIO_GC` ya contiene ese
+correo asociado con un usuario C/E. Ninguna cuenta corporativa puede usar como
+alternativa una contraseña local.
+
+Configure `.env` sin agregar contraseñas de Windows:
+
+```dotenv
+LDAP_HABILITADO=true
+LDAP_HOST=claro.pe
+LDAP_DOMINIO_NETBIOS=CLARO
+LDAP_BASE_DN=dc=claro,dc=pe
+LDAP_MODO=plano
+LDAP_TIMEOUT_CONEXION=5
+LDAP_TIMEOUT_RESPUESTA=10
+LDAP_CA_CERT=
+DOMINIOS_CORREO_CLARO=claro.com.pe
+```
+
+Los modos disponibles son `plano` (389), `starttls` (389 con TLS) y `ldaps` (636).
+Para StartTLS o LDAPS, `LDAP_CA_CERT` puede apuntar al certificado CA corporativo.
+El modo plano queda habilitado por compatibilidad y muestra una advertencia; se
+recomienda coordinar con TI la migración a StartTLS o LDAPS.
+
+Después de una autenticación corporativa correcta, el portal busca
+`sAMAccountName`, rechaza cuentas AD deshabilitadas y sincroniza nombre completo y
+correo en `TBL_USUARIO_GC`. Conserva `ROL` y `ACTIVO`; a una cuenta nueva le asigna
+`ANALISTA`, el rol de menor privilegio disponible. La columna `CLAVE_HASH` recibe
+una marca de contraseña inutilizable de Django: nunca se almacena la contraseña AD
+ni un hash de ella.
+
+El modelo actual no posee tablas ni columnas separadas para área, gerencia,
+dirección, jefe o perfil. La integración no crea esas tablas y no modifica ninguna
+información organizacional externa. Tampoco existe una pantalla de administración
+de usuarios o de cambio de contraseña. El comando `crear_usuario_portal` se conserva
+solo para cuentas locales y rechaza códigos C/E y correos Claro. La contraseña de
+una cuenta corporativa se administra mediante el procedimiento de Windows/Dominio
+Claro.
+
+La primera publicación con los nuevos backends cerrará las sesiones anteriores,
+porque la sesión firmada conserva la ruta del backend que autenticó al usuario. No
+se pierde información: cada usuario debe iniciar sesión nuevamente.
+
+El arranque comprueba `ldap3`, `pycryptodome` y la disponibilidad de MD4 antes de
+publicar Waitress. Una falla posterior de red o LDAP se muestra como mensaje
+controlado en el login y no produce un error HTTP 500.
+
+### Actualizar una instalación existente
+
+Después de actualizar el repositorio, ejecute exactamente:
 
 ```powershell
+git pull
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+.\.venv\Scripts\python.exe manage.py check
+.\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe manage.py collectstatic --noinput
 ```
+
+Detenga el proceso anterior con `Ctrl+C` en su consola y reinicie:
+
+```powershell
+.\.venv\Scripts\python.exe run.py
+```
+
+No ejecute `manage.py migrate`, `instalar_esquema_gc` ni ningún DDL para esta
+actualización: la autenticación AD no agrega tablas, columnas, índices ni
+restricciones.
 
 Si desea cambiar el límite de carga del Consolidado, configure `COMMERCIAL_WORKBOOK_MAX_MB` en `.env` (25 MB por defecto) y reinicie el portal.
 

@@ -50,7 +50,24 @@ TEMPLATES = [{
 WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {"default": database_config(os.environ, BASE_DIR)}
 AUTH_USER_MODEL = "portal.PortalUser"
-AUTHENTICATION_BACKENDS = ["portal.auth_backends.PortalBackend"]
+AUTHENTICATION_BACKENDS = [
+    "portal.auth_backends.ClaroActiveDirectoryBackend",
+    "portal.auth_backends.RestrictedPortalBackend",
+]
+
+LDAP_HABILITADO = flag(os.environ, "LDAP_HABILITADO", "true")
+LDAP_HOST = os.getenv("LDAP_HOST", "claro.pe").strip()
+LDAP_DOMINIO_NETBIOS = os.getenv("LDAP_DOMINIO_NETBIOS", "CLARO").strip()
+LDAP_BASE_DN = os.getenv("LDAP_BASE_DN", "dc=claro,dc=pe").strip()
+LDAP_MODO = os.getenv("LDAP_MODO", "plano").strip().lower()
+LDAP_TIMEOUT_CONEXION = int(os.getenv("LDAP_TIMEOUT_CONEXION", "5"))
+LDAP_TIMEOUT_RESPUESTA = int(os.getenv("LDAP_TIMEOUT_RESPUESTA", "10"))
+LDAP_CA_CERT = os.getenv("LDAP_CA_CERT", "").strip()
+DOMINIOS_CORREO_CLARO = tuple(
+    value.strip().lower()
+    for value in os.getenv("DOMINIOS_CORREO_CLARO", "claro.com.pe").split(",")
+    if value.strip()
+)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -86,6 +103,7 @@ if flag(os.environ, "TRUST_PROXY_HTTPS", "false"):
 
 # Declaración visible: el código nunca aplica migraciones automáticamente.
 AUTO_MIGRATE = flag(os.environ, "AUTO_MIGRATE", "false")
+MIGRATION_MODULES = {"portal": None, "validaciones": None}
 
 
 def project_path(name, default):

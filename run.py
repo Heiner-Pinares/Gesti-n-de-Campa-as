@@ -98,6 +98,31 @@ def main():
         print("ERROR DE CONFIGURACIÓN: ALLOWED_HOSTS no puede estar vacío.", flush=True)
         return 1
 
+    if settings.LDAP_HABILITADO:
+        from portal.active_directory import (
+            DirectoryDependencyError,
+            validate_ldap_dependencies,
+        )
+
+        print("Comprobando dependencias de Active Directory...", flush=True)
+        try:
+            validate_ldap_dependencies()
+        except DirectoryDependencyError as error:
+            print(f"ERROR DE CONFIGURACIÓN LDAP: {error}", flush=True)
+            return 1
+        if settings.LDAP_MODO not in {"plano", "starttls", "ldaps"}:
+            print(
+                "ERROR DE CONFIGURACIÓN LDAP: LDAP_MODO debe ser plano, starttls o ldaps.",
+                flush=True,
+            )
+            return 1
+        if settings.LDAP_MODO == "plano":
+            print(
+                "ADVERTENCIA: LDAP está en modo plano por compatibilidad. "
+                "Solicite a TI habilitar LDAPS o StartTLS.",
+                flush=True,
+            )
+
     print("Comprobando conexión a la base de datos...", flush=True)
     try:
         comprobar_base_datos()

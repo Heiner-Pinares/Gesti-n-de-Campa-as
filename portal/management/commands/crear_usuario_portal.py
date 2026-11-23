@@ -7,6 +7,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 
+from portal.active_directory import is_corporate_identifier
+
 
 class Command(BaseCommand):
     help = "Crea un usuario del portal y solicita la contraseña sin mostrarla."
@@ -28,6 +30,11 @@ class Command(BaseCommand):
         email = options["email"].strip() or input("Correo (opcional): ").strip()
         if not username or not full_name:
             raise CommandError("Usuario y nombre completo son obligatorios.")
+        if is_corporate_identifier(username) or is_corporate_identifier(email):
+            raise CommandError(
+                "Las cuentas C/E y los correos de Claro se crean al iniciar sesión "
+                "con Dominio Claro; no se les asigna una contraseña local."
+            )
         if user_model.objects.filter(username__iexact=username).exists():
             raise CommandError("El usuario ya existe.")
 

@@ -28,7 +28,9 @@ Documentación principal:
 - Django Templates, CSS y JavaScript vanilla.
 - `python-oracledb` Thin, inicialmente sin pool.
 - Oracle en lectura para las fuentes de facturación y con escritura limitada a las tablas propias `TBL_*_GC`.
-- Autenticación propia en `TBL_USUARIO_GC` y sesiones firmadas, sin tablas estándar `AUTH_*`.
+- Autenticación corporativa Claro por LDAP/NTLM para cuentas C/E y autenticación
+  local restringida para los demás usuarios, ambas sobre `TBL_USUARIO_GC`.
+- Sesiones firmadas en cookies HttpOnly, sin tablas estándar `AUTH_*` ni tablas LDAP nuevas.
 - Reutilización selectiva de patrones de 4DX, sin modificar ni copiar sus tablas, datos, secretos o migraciones.
 - Pruebas portables con SQLite en memoria y fixtures anonimizados.
 
@@ -41,6 +43,11 @@ Documentación principal:
 5. Cree los objetos autorizados con `scripts\apply_oracle_schema.ps1`.
 6. Cree el administrador con `scripts\create_portal_admin.ps1`.
 7. Inicie el portal mediante `scripts\run_windows.ps1` o directamente con `.\.venv\Scripts\python.exe run.py`.
+
+Las cuentas `C`/`E` se crean o sincronizan automáticamente después de validar su
+contraseña con Dominio Claro. La contraseña de dominio no se almacena en Oracle.
+La configuración y los pasos de actualización están en
+`docs/SERVIDOR_WINDOWS.md`, sección **Active Directory de Claro**.
 
 Una validación también puede ejecutarse sin abrir el portal:
 

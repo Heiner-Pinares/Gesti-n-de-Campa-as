@@ -3,6 +3,49 @@ from pathlib import Path
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
+from django.views.decorators.debug import sensitive_variables
+
+
+class PortalAuthenticationForm(AuthenticationForm):
+    error_messages = {
+        "invalid_login": "Usuario o contraseña incorrectos.",
+        "inactive": "Esta cuenta no tiene el acceso habilitado.",
+        "directory_unavailable": (
+            "No pudimos validar tu contraseña de dominio en este momento. "
+            "Intenta nuevamente en unos minutos."
+        ),
+    }
+
+    def __init__(self, request=None, *args, **kwargs):
+        super().__init__(request, *args, **kwargs)
+        self.fields["username"].label = "Código C/E o usuario local"
+        self.fields["username"].widget.attrs.update(
+            {
+                "placeholder": "Ej. C27826 o usuario local",
+                "autocomplete": "username",
+                "autocapitalize": "none",
+            }
+        )
+        self.fields["password"].widget.attrs["autocomplete"] = "current-password"
+
+    @sensitive_variables("password")
+    def clean(self):
+        try:
+            return super().clean()
+        except ValidationError as error:
+            status = getattr(self.request, "_portal_auth_status", None)
+            if status == "directory_unavailable":
+                raise ValidationError(
+                    self.error_messages["directory_unavailable"],
+                    code="directory_unavailable",
+                ) from error
+            if status == "portal_inactive":
+                raise ValidationError(
+                    self.error_messages["inactive"], code="inactive"
+                ) from error
+            raise
 
 
 class CommercialWorkbookUploadForm(forms.Form):
