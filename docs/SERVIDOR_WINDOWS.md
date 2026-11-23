@@ -1,6 +1,8 @@
 # Preparación para servidor Windows
 
-Esta guía no instala un servicio, no programa tareas y no ejecuta migraciones. Es una preparación para el ambiente autorizado.
+Esta guía conserva el detalle de instalación, Oracle y Active Directory. Para la
+operación permanente, el administrador de procesos y la tarea al arrancar
+Windows, siga `docs/PRODUCCION_WINDOWS.md`. Ningún flujo ejecuta migraciones.
 
 ## Requisitos
 
@@ -105,13 +107,20 @@ Si el esquema se creó con una versión inicial que usaba `TIMESTAMP WITH TIME Z
 
 La reparación solo afecta las columnas técnicas de fecha de `TBL_*_GC`. Preserva los usuarios existentes y se detiene si detecta datos funcionales que requieran una revisión manual.
 
-## Arranque en la red corporativa
+## Arranque manual de diagnóstico
+
+El flujo vigente para producción es `.\scripts\portal.cmd start`. El siguiente
+arranque en primer plano se conserva solo para diagnóstico, porque depende de la
+consola abierta:
+
+`scripts\run_windows.ps1` se conserva como alias y ahora delega al administrador
+permanente. Para el arranque normal use:
 
 ```powershell
-.\scripts\run_windows.ps1
+.\scripts\portal.cmd start
 ```
 
-El comando directo equivalente es:
+Solo para diagnóstico en primer plano puede ejecutar:
 
 ```powershell
 .\.venv\Scripts\python.exe run.py
@@ -123,7 +132,7 @@ El comando directo equivalente es:
 2. Comprueba la conexión Oracle sin crear ni modificar datos.
 3. Ejecuta `collectstatic --noinput`.
 4. Detecta una IPv4 local solo para mostrar la URL.
-5. Inicia Waitress en `0.0.0.0:8000` con ocho hilos por defecto.
+5. Inicia Waitress en `0.0.0.0` y el puerto configurado en `.env`.
 
 No ejecuta migraciones ni DDL. La IP detectada nunca se utiliza como dirección de escucha.
 
@@ -151,7 +160,9 @@ netstat -ano | findstr :8000
 
 La salida debe contener `0.0.0.0:8000` en estado `LISTENING`. Desde otra computadora de la misma red, abra `http://IP_DEL_SERVIDOR:8000`.
 
-Las variables históricas `WEB_HOST`, `WEB_PORT` y `WEB_THREADS` siguen siendo compatibles, pero para nuevas instalaciones utilice `HOST`, `PORT` y `THREADS`.
+Los nombres preferidos son `WEB_BIND_ADDRESS`, `PORTAL_PORT` y
+`PORTAL_THREADS`. También se aceptan `HOST`, `PORT`, `THREADS` y los nombres
+históricos `WEB_*`. Si su `.env` ya contiene `PORT=8006`, se respeta sin cambios.
 
 No se debe exponer directamente el puerto a Internet. La publicación final debe coordinarse con Infraestructura mediante el proxy inverso corporativo, HTTPS, firewall y nombre DNS aprobados.
 
@@ -264,10 +275,11 @@ git pull
 .\.venv\Scripts\python.exe manage.py collectstatic --noinput
 ```
 
-Detenga el proceso anterior con `Ctrl+C` en su consola y reinicie:
+En una instalación administrada, reinicie de forma segura:
 
 ```powershell
-.\.venv\Scripts\python.exe run.py
+.\scripts\portal.cmd restart
+.\scripts\portal.cmd status
 ```
 
 No ejecute `manage.py migrate` ni recree el esquema. El script
@@ -288,9 +300,11 @@ La ejecución manual se inicia desde la sección **Validaciones**. También se p
 
 El proceso solo consulta las tablas fuente y escribe en `TBL_VALIDACION_EJECUCION_GC`, `TBL_VALIDACION_RESULTADO_GC` y `TBL_AUDITORIA_CAMBIO_GC`.
 
-## Servicio de Windows y automatización
+## Operación permanente y automatización
 
-No se ha registrado un servicio de Windows ni una tarea en Task Scheduler. Antes de hacerlo se debe confirmar:
+El repositorio ya incluye el administrador `scripts\portal.cmd` y el publicador
+`scripts\publicar_portal_windows.ps1`. Consulte `docs/PRODUCCION_WINDOWS.md`.
+Antes de registrar la tarea se debe confirmar:
 
 - Cuenta de servicio.
 - Carpeta definitiva.

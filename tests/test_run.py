@@ -11,7 +11,7 @@ def test_runtime_options_use_corporate_network_defaults():
 
 @pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "172.19.194.219"])
 def test_runtime_options_reject_non_wildcard_listeners(host):
-    with pytest.raises(ValueError, match="HOST debe ser 0.0.0.0"):
+    with pytest.raises(ValueError, match="debe ser 0.0.0.0"):
         run.runtime_options({"HOST": host})
 
 
@@ -19,6 +19,29 @@ def test_runtime_options_preserve_legacy_environment_names():
     assert run.runtime_options(
         {"WEB_HOST": "0.0.0.0", "WEB_PORT": "9000", "WEB_THREADS": "4"}
     ) == ("0.0.0.0", 9000, 4)
+
+
+def test_runtime_options_accept_production_environment_names():
+    assert run.runtime_options(
+        {
+            "WEB_BIND_ADDRESS": "0.0.0.0",
+            "PORTAL_PORT": "8006",
+            "PORTAL_THREADS": "12",
+        }
+    ) == ("0.0.0.0", 8006, 12)
+
+
+def test_production_names_override_compatible_legacy_names():
+    assert run.runtime_options(
+        {
+            "WEB_BIND_ADDRESS": "0.0.0.0",
+            "HOST": "127.0.0.1",
+            "PORTAL_PORT": "8006",
+            "PORT": "8000",
+            "PORTAL_THREADS": "10",
+            "THREADS": "2",
+        }
+    ) == ("0.0.0.0", 8006, 10)
 
 
 def test_local_ip_falls_back_to_hostname_addresses(monkeypatch):

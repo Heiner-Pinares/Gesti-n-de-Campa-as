@@ -100,15 +100,33 @@ def obtener_ip_local():
 
 def runtime_options(environment=None):
     environment = os.environ if environment is None else environment
-    host = (environment.get("HOST") or environment.get("WEB_HOST") or "0.0.0.0").strip()
-    port = int(environment.get("PORT") or environment.get("WEB_PORT") or "8000")
-    threads = int(environment.get("THREADS") or environment.get("WEB_THREADS") or "8")
+    host = (
+        environment.get("WEB_BIND_ADDRESS")
+        or environment.get("HOST")
+        or environment.get("WEB_HOST")
+        or "0.0.0.0"
+    ).strip()
+    port = int(
+        environment.get("PORTAL_PORT")
+        or environment.get("PORT")
+        or environment.get("WEB_PORT")
+        or "8000"
+    )
+    threads = int(
+        environment.get("PORTAL_THREADS")
+        or environment.get("THREADS")
+        or environment.get("WEB_THREADS")
+        or "8"
+    )
     if host in LOOPBACK_HOSTS or host != "0.0.0.0":
-        raise ValueError("HOST debe ser 0.0.0.0 para permitir el acceso desde la red corporativa.")
+        raise ValueError(
+            "WEB_BIND_ADDRESS (o HOST) debe ser 0.0.0.0 para permitir "
+            "el acceso desde la red corporativa."
+        )
     if not 1 <= port <= 65535:
-        raise ValueError("PORT debe estar entre 1 y 65535.")
+        raise ValueError("PORTAL_PORT (o PORT) debe estar entre 1 y 65535.")
     if threads < 1:
-        raise ValueError("THREADS debe ser mayor que cero.")
+        raise ValueError("PORTAL_THREADS (o THREADS) debe ser mayor que cero.")
     return host, port, threads
 
 
